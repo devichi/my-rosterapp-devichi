@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>TheDawsonRosterProj</display-name>
+  <welcome-file-list>
+    <welcome-file>Login.jsp</welcome-file>
+  </welcome-file-list>
+  
+  <servlet>
+    <description></description>
+    <display-name>LoginValidator</display-name>
+    <servlet-name>LoginValidator</servlet-name>
+    <servlet-class>com.thedawson.mvc.LoginValidator</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>LoginValidator</servlet-name>
+    <url-pattern>/loginvalidator</url-pattern>
+  </servlet-mapping>
+  
+  <env-entry>
+    <env-entry-name>DAO.Impl</env-entry-name>
+    <env-entry-type>java.lang.String</env-entry-type>
+    <env-entry-value>com.thedawson.util.dao.RosterDAOOracleImpl</env-entry-value>
+  </env-entry>
+  
+  <resource-ref>
+	<res-ref-name>jdbc/tdrosterdb</res-ref-name>
+	<res-type>javax.sql.DataSource</res-type>
+	<res-auth>Container</res-auth>
+  </resource-ref>
+  
+</web-app>
