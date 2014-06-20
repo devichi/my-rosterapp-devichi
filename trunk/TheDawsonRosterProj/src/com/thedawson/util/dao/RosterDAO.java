@@ -8,7 +8,7 @@ import com.thedawson.util.model.*;
 
 public interface RosterDAO {
 	//connect is simply a test method to connect to the database
-	public void connect();
+	//public void connect();
 	
 	//RosterDAO interface methods
 	public JobTitleModel addJobTitle(String title);

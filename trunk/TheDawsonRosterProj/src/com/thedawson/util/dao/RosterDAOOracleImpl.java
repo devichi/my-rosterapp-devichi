@@ -1,15 +1,15 @@
 package com.thedawson.util.dao;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+//import java.sql.Connection;
+//import java.sql.ResultSet;
+//import java.sql.SQLException;
+//import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
 
-import oracle.jdbc.pool.OracleDataSource;
+//import oracle.jdbc.pool.OracleDataSource;
 
-import org.apache.commons.dbutils.DbUtils;
+//import org.apache.commons.dbutils.DbUtils;
 
 import com.thedawson.util.model.EmployeeModel;
 import com.thedawson.util.model.HotelModel;
@@ -18,13 +18,11 @@ import com.thedawson.util.model.WorkDayModel;
 import com.thedawson.util.model.WorkScheduleModel;
 
 public class RosterDAOOracleImpl implements RosterDAO {
-	private static final String DB_URL = "jdbc:oracle:thin:@//localhost:1521/TDROSTERDB";
-	private static final String USER = "tdroster_admin";
-	private static final String PWD = "tdroster1379";
-	
+		
 	/**
 	 * Method to test connection to the database.  Not used in actual application.
 	 */
+	/*
 	@Override
 	public void connect() {
 		
@@ -34,9 +32,9 @@ public class RosterDAOOracleImpl implements RosterDAO {
 		
 		try {
 			OracleDataSource ods = new OracleDataSource();
-			ods.setURL(DB_URL);
-			ods.setUser(USER);
-			ods.setPassword(PWD);
+			ods.setURL("jdbc:oracle:thin:@//localhost:1521/TDROSTERDB");
+			ods.setUser("tdroster_admin");
+			ods.setPassword("tdroster1379");
 
 			conn = ods.getConnection();
 			stmt = conn.createStatement();
@@ -63,6 +61,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 			DbUtils.closeQuietly(conn);
 		}
 	}
+	*/
 	
 	/* Adds a job title row to the database
 	 * @see com.thedawson.util.dao.RosterDAO#addJobTitle(java.lang.String)
@@ -72,39 +71,15 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	@Override
 	public JobTitleModel addJobTitle(String title) {
 		
-		try {
-			//Create Connection
-			OracleDataSource ods = new OracleDataSource();
-			ods.setURL(DB_URL);
-			ods.setUser(USER);
-			ods.setPassword(PWD);
+		//Create Connection
+		DBManager dbm = DBManager.getInstance();
 
-			Connection conn = ods.getConnection();
-			Statement stmt = conn.createStatement();
+		//Create SQL Query and execute it
+		String sql_update = "INSERT INTO jobtitle VALUES (null, '" + title + "')";
 
-			//Create SQL Query and execute it
-			String sql_update = "INSERT INTO jobtitle VALUES (null, '" + title + "');";
+		System.out.println(sql_update);
 
-			System.out.println(sql_update);
-
-			stmt.executeUpdate(sql_update);
-			
-			String sql_get = "SELECT * FROM jobtitle WHERE job_title = " + title + ";";
-			
-			ResultSet rs = stmt.executeQuery(sql_get);
-			
-			
-			
-			//Close Connections
-			stmt.close();
-			conn.close();
-		} catch (SQLException se) {
-			se.printStackTrace();
-		}
-		
-		finally {
-			
-		}
+		//dbm.executeQueryUpdate(sql_update);
 		
 		return null;
 	}
@@ -388,7 +363,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	public static void main (String[] args) {
 		RosterDAOOracleImpl ri = new RosterDAOOracleImpl();
 		
-		ri.connect();
+		//ri.connect();
 		//ri.addJobTitle("Sexy");
 	}
 }
