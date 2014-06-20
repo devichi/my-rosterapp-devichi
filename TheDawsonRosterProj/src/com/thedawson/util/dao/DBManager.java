@@ -6,7 +6,9 @@ package com.thedawson.util.dao;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -19,7 +21,7 @@ import org.apache.commons.dbutils.DbUtils;
 import com.sun.rowset.CachedRowSetImpl;
 
 /**
- * Manages the database connection and resultset objects to the database.
+ * Manages the database connection objects and encapsulates database functions.
  * @author Victor Lau
  */
 public class DBManager {
@@ -30,14 +32,21 @@ public class DBManager {
 	private ResultSet rs = null;
 	
 	//Retrieves the Data Source
-	public DBManager() {
+	private DBManager() {
 		try {
 			Context ic = new InitialContext();
 			ods = (DataSource)ic.lookup("java:comp/env/jdbc/rosterdb");
-			System.out.println("Datasource Null: " + (ods==null));
 		} catch (NamingException ne) {
 			ne.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Static method to return the singleton instance of a DBManager
+	 * @return
+	 */
+	public static DBManager getInstance() {
+		return DBManagerSingleton.DBMS_INSTANCE;
 	}
 	
 	/**
@@ -48,25 +57,39 @@ public class DBManager {
 		
 		try {
 			if(conn == null || conn.isClosed()) {
-
+				
+				System.out.println("In Open Connection - Connection is null or closed");
+				
 				//Create connection
 				conn = ods.getConnection();
 				state = conn.createStatement();
+				
+				System.out.println("Setting AutoCommit to False");
+				
+				//Ensure all database operations are transactions by setting turning off autocommit
+				conn.setAutoCommit(false);
 			}
 		} catch (SQLException se) {
 			se.printStackTrace();
 		}
 	}
 	
+	/**
+	 * Executes any select statements to the database and returns the results
+	 * @return Cached version of the resultset
+	 */
 	public CachedRowSet executeQuerySelect(String sql) {
 		this.openConnection();
 
 		CachedRowSet crs = null;
 		
 		try {
+			System.out.println("Running Query in executeQuerySelect: " + sql);
+			
 			rs = state.executeQuery(sql);
 			crs = new CachedRowSetImpl();
 			crs.populate(rs);
+			
 		} catch (SQLException se) {
 			se.printStackTrace();
 		}
@@ -76,34 +99,67 @@ public class DBManager {
 		return crs;
 	}
 	
-	public int executeQueryUpdate(String sql) {
+	/**
+	 * Executes all INSERT, UPDATE, or DELETE statements to the database
+	 * @return A list of Auto Generated Keys from insert, update, or delete if applicable.
+	 */
+	public ArrayList<CachedRowSet> executeQueryUpdate(ArrayList<String> sqls) {
 		this.openConnection();
-
-		int result = -1;
+		
+		ArrayList<CachedRowSet> crs = new ArrayList<CachedRowSet>();
+		Savepoint sp = null;
 		
 		try {
-			result = state.executeUpdate(sql);
+			//Create Savepoint
+			sp = conn.setSavepoint("ECSelect_SP1");
+			
+			
+			for (String s : sqls) {
+				state.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
+				rs = state.getGeneratedKeys();
+				CachedRowSet oneCrs = new CachedRowSetImpl();
+				oneCrs.populate(rs);
+				
+				//Populate the Arraylist in order of the query run from sqls Arraylist
+				crs.add(oneCrs);
+			}
+			
+			//Commit all transaction from the batch DML statements
+			conn.commit();
 		} catch (SQLException se) {
 			se.printStackTrace();
+			
+			//An error occured processing a DML statement, rollback whole transaction and return null
+			try { conn.rollback(sp); } catch (SQLException se1) { se1.printStackTrace(); }
+			crs = null;
 		}
 
 		this.closeConnection();
 		
-		return result;
+		return crs;
 	}
 	
 	/**
 	 * Closes all the connections to the database if they are set.  Uses package DBUtils.
 	 */
 	private void closeConnection() {
+		System.out.println("Closing Connection");
 		DbUtils.closeQuietly(conn, state, rs);
 	}
+	
+	/**
+	 * Private static class that simply holds the DBManager singleton instance.
+	 */
+	private static class DBManagerSingleton {
+		private static final DBManager DBMS_INSTANCE = new DBManager();
+	}
+	
 	
 	/** TEST TEST TEST
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		DBManager dbm = new DBManager();
+		DBManager dbm = DBManager.getInstance();
 		
 		String quer = "SELECT * FROM employee;";
 		

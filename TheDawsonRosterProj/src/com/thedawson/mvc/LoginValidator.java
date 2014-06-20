@@ -28,7 +28,7 @@ public class LoginValidator extends HttpServlet {
 		out.println("The POST WORKS!!!!  VIctor");
 		
 		
-		DBManager dbm = new DBManager();
+		DBManager dbm = DBManager.getInstance();
 		
 		String quer = "SELECT * FROM employee";
 		
@@ -37,21 +37,25 @@ public class LoginValidator extends HttpServlet {
 		CachedRowSet res = dbm.executeQuerySelect(quer);
 
 		System.out.println ("Is CachedRowSet object null: " + (res==null));
-		System.out.println("Printing Cached Row Set results");
 		
-		try {
-			while (res.next()) {
-				int emp_id = res.getInt(1);
-				String fname = res.getString(2);
-				String lname = res.getString(3);
-				String email = res.getString(4);
-				String uname = res.getString(5);
-				String encpwd = res.getString(6);
+		if(res != null) {
+		
+			System.out.println("Printing Cached Row Set results");
+			
+			try {
+				while (res.next()) {
+					int emp_id = res.getInt(1);
+					String fname = res.getString(2);
+					String lname = res.getString(3);
+					String email = res.getString(4);
+					String uname = res.getString(5);
+					String encpwd = res.getString(6);
 
-				System.out.println("Emp Id: " + emp_id + " First: " + fname + " Last: " + lname + " Email: " + email + " User: " + uname + " Pass: " + encpwd);
+					System.out.println("Emp Id: " + emp_id + " First: " + fname + " Last: " + lname + " Email: " + email + " User: " + uname + " Pass: " + encpwd);
+				}
+			} catch (SQLException se) {
+				se.printStackTrace();
 			}
-		} catch (SQLException se) {
-			se.printStackTrace();
 		}
 		
 		System.out.println ("Finished DBManager Test!!!");

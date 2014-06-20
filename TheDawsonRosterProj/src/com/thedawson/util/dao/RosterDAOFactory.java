@@ -45,7 +45,7 @@ public class RosterDAOFactory {
 		
 		System.out.println("Creating a connection with Factory DAO object");
 		
-		rd.connect();
+		//rd.connect();
 		
 		System.out.println("Factory DAO connection completed");
 		
