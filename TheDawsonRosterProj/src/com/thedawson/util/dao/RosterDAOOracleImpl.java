@@ -4,13 +4,16 @@ package com.thedawson.util.dao;
 //import java.sql.ResultSet;
 //import java.sql.SQLException;
 //import java.sql.Statement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+
+import javax.sql.rowset.CachedRowSet;
+
 
 //import oracle.jdbc.pool.OracleDataSource;
-
 //import org.apache.commons.dbutils.DbUtils;
-
 import com.thedawson.util.model.EmployeeModel;
 import com.thedawson.util.model.HotelModel;
 import com.thedawson.util.model.JobTitleModel;
@@ -18,7 +21,10 @@ import com.thedawson.util.model.WorkDayModel;
 import com.thedawson.util.model.WorkScheduleModel;
 
 public class RosterDAOOracleImpl implements RosterDAO {
-		
+	
+	//The DB object used to connect to DB and run queries
+	private DBManager dbm = DBManager.getInstance();
+	
 	/**
 	 * Method to test connection to the database.  Not used in actual application.
 	 */
@@ -71,61 +77,155 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	@Override
 	public JobTitleModel addJobTitle(String title) {
 		
-		//Create Connection
-		DBManager dbm = DBManager.getInstance();
+		HashMap<String, String[]> sqlWithAkgRows = new HashMap<String, String[]>();
+		ArrayList<Integer> genKeysList = null;
+		JobTitleModel jtm = null;
 
 		//Create SQL Query and execute it
-		String sql_update = "INSERT INTO jobtitle VALUES (null, '" + title + "')";
+		String sql = "INSERT INTO jobtitle VALUES (null, '" + title + "')";
+		String[] akgRows = {"job_id"};
+		sqlWithAkgRows.put(sql, akgRows);
 
-		System.out.println(sql_update);
+		System.out.println(sql);
 
-		//dbm.executeQueryUpdate(sql_update);
+		//Retrieve the auto generated key from the database
+		genKeysList = dbm.executeQueryUpdate(sqlWithAkgRows);
 		
-		return null;
+		//If there was a SQL Error in executeQueryUpdate then genKeyList will be null
+		if(genKeysList == null) {
+			return jtm;
+		}
+		
+		//No error, so process genKeyList
+		Integer jtGenKey = genKeysList.get(0);
+		int jobGk = jtGenKey.intValue();
+		
+		//Create the job title object model for return
+		System.out.println("Generated Key Job Title: " + jobGk);
+		jtm = new JobTitleModel(jobGk, title);
+		
+		return jtm;
 	}
 
 
 
-	/* (non-Javadoc)
+	/* Deletes a job title from the database
 	 * @see com.thedawson.util.dao.RosterDAO#removeJobTitle(int)
+	 * @param the job title database id to remove
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
 	 */
 	@Override
-	public void removeJobTitle(int jobid) {
-		// TODO Auto-generated method stub
+	public boolean removeJobTitle(int jobid) {
+		HashMap<String, String[]> sqlWithAkgRows = new HashMap<String, String[]>();
 		
+		//Create SQL Query and execute it
+		String sql = "DELETE FROM jobtitle WHERE job_id = " + jobid;
+		sqlWithAkgRows.put(sql, null);
+		
+		System.out.println(sql);
+		
+		//Execute the db removal
+		if(dbm.executeQueryUpdate(sqlWithAkgRows) != null) {
+			return true;
+		}
+		
+		return false;
 	}
 
 
 
-	/* (non-Javadoc)
+	/* Updates the job title from the database
 	 * @see com.thedawson.util.dao.RosterDAO#updateJobTitle(int, java.lang.String)
+	 * @param the job title database id to update and the title value to update the row with
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
 	 */
 	@Override
-	public void updateJobTitle(int jobid, String title) {
-		// TODO Auto-generated method stub
+	public boolean updateJobTitle(int jobid, String title) {
+		HashMap<String, String[]> sqlWithAkgRows = new HashMap<String, String[]>();
 		
+		//Create SQL Query and execute it
+		String sql = "UPDATE jobtitle SET job_title = '" + title + "' WHERE job_id = " + jobid;
+		sqlWithAkgRows.put(sql, null);
+		
+		System.out.println(sql);
+		
+		//Execute the db removal
+		if (dbm.executeQueryUpdate(sqlWithAkgRows) != null) {
+			return true;
+		}
+		
+		return false;
 	}
 
 
 
-	/* (non-Javadoc)
+	/* Retrieve all the job titles in the jobtitle table in the database
 	 * @see com.thedawson.util.dao.RosterDAO#getJobTitles()
+	 * @return the arraylist of all the job title rows in the database in model objects
 	 */
 	@Override
 	public ArrayList<JobTitleModel> getJobTitles() {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<JobTitleModel> jtmList = new ArrayList<JobTitleModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM jobtitle";
+		
+		System.out.println(sql);
+		
+		CachedRowSet crs = dbm.executeQuerySelect(sql);
+		
+		try {
+			while (crs.next()) {
+				
+				int jobId = crs.getInt(1);
+				String jobTitle = crs.getString(2);
+
+				jtmList.add(new JobTitleModel(jobId, jobTitle));
+			}
+		} catch (SQLException se) {
+			jtmList = null;
+			se.printStackTrace();
+		}
+		
+		return jtmList;
 	}
 
 
 
-	/* (non-Javadoc)
+	/* Retrieves a particular job title from the jobtitle table in the database based on job id
 	 * @see com.thedawson.util.dao.RosterDAO#getJobTitleById(int)
+	 * @param jobid the job id you want to retrieve from the database.
+	 * @return a job title database result in model form with the associated jobid
 	 */
 	@Override
 	public JobTitleModel getJobTitleById(int jobid) {
-		// TODO Auto-generated method stub
-		return null;
+		JobTitleModel jtm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM jobtitle where job_id = " + jobid;
+		
+		System.out.println(sql);
+		
+		CachedRowSet crs = dbm.executeQuerySelect(sql);
+		
+		//If crs is empty then no row exists with provided jobid, return null job title model below
+		//Otherwise do the try catch and create job title model object
+		if(crs.size() != 0) {
+			try {
+				crs.next();
+
+				int jobId = crs.getInt(1);
+				String jobTitle = crs.getString(2);
+
+				jtm = new JobTitleModel(jobId, jobTitle);
+
+			} catch (SQLException se) {
+				jtm = null;
+				se.printStackTrace();
+			}
+		}
+		
+		return jtm;
 	}
 
 
@@ -358,12 +458,4 @@ public class RosterDAOOracleImpl implements RosterDAO {
 		return null;
 	}
 
-
-
-	public static void main (String[] args) {
-		RosterDAOOracleImpl ri = new RosterDAOOracleImpl();
-		
-		//ri.connect();
-		//ri.addJobTitle("Sexy");
-	}
 }

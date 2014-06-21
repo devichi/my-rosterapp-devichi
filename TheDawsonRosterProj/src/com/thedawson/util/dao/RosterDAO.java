@@ -1,6 +1,5 @@
 package com.thedawson.util.dao;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -12,8 +11,8 @@ public interface RosterDAO {
 	
 	//RosterDAO interface methods
 	public JobTitleModel addJobTitle(String title);
-	public void removeJobTitle(int jobid);
-	public void updateJobTitle(int jobid, String title);
+	public boolean removeJobTitle(int jobid);
+	public boolean updateJobTitle(int jobid, String title);
 	public ArrayList<JobTitleModel> getJobTitles();
 	public JobTitleModel getJobTitleById(int jobid);
 	

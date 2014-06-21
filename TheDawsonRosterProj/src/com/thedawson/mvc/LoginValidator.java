@@ -2,15 +2,17 @@ package com.thedawson.mvc;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.sql.rowset.CachedRowSet;
 
-import com.thedawson.util.dao.DBManager;
+import com.thedawson.util.dao.RosterDAO;
+import com.thedawson.util.dao.RosterDAOFactory;
+import com.thedawson.util.model.JobTitleModel;
 
 /**
  * Servlet implementation class LoginValidator
@@ -28,39 +30,64 @@ public class LoginValidator extends HttpServlet {
 		out.println("The POST WORKS!!!!  VIctor");
 		
 		
-		DBManager dbm = DBManager.getInstance();
+		RosterDAOFactory rdf = new RosterDAOFactory();
+		RosterDAO rd = rdf.getDao();
 		
-		String quer = "SELECT * FROM employee";
+		JobTitleModel jtm = rd.getJobTitleById(3);
+		//JobTitleModel jtm = rd.getJobTitleById(8888);
 		
-		System.out.println("Creating a connection with DBManager object");
-		
-		CachedRowSet res = dbm.executeQuerySelect(quer);
-
-		System.out.println ("Is CachedRowSet object null: " + (res==null));
-		
-		if(res != null) {
-		
-			System.out.println("Printing Cached Row Set results");
-			
-			try {
-				while (res.next()) {
-					int emp_id = res.getInt(1);
-					String fname = res.getString(2);
-					String lname = res.getString(3);
-					String email = res.getString(4);
-					String uname = res.getString(5);
-					String encpwd = res.getString(6);
-
-					System.out.println("Emp Id: " + emp_id + " First: " + fname + " Last: " + lname + " Email: " + email + " User: " + uname + " Pass: " + encpwd);
-				}
-			} catch (SQLException se) {
-				se.printStackTrace();
-			}
+		if (jtm != null) {
+			System.out.println("Job Title ID: " + jtm.getJobTitleId());
+			System.out.println("Job Title Name: " + jtm.getJobTitleName());
 		}
 		
-		System.out.println ("Finished DBManager Test!!!");
+		/*
+		System.out.println("Calling the DAO object add Job Title method");
 		
+		JobTitleModel jtm = rd.addJobTitle("Spaceman");
 		
-	}
+		if(jtm != null) {
+			System.out.println("Finished creating job Title, Print returned JT Model object details");
+			System.out.println("Job Title ID: " + jtm.getJobTitleId());
+			System.out.println("Job Title Name: " + jtm.getJobTitleName());
 
+			System.out.println("Printing all Job Titles in the database");
+
+			for(int i=0; i < 2; i++) {
+				ArrayList<JobTitleModel> jtmList = rd.getJobTitles();
+
+				Iterator<JobTitleModel> iter = jtmList.iterator();
+				while (iter.hasNext()) {
+					JobTitleModel curJtm = (JobTitleModel) iter.next();
+
+					System.out.println("JT Id: " + curJtm.getJobTitleId() + " JT title: " + curJtm.getJobTitleName());
+				}
+
+				if (i == 0) {
+					System.out.println("Updating the job title just created");
+
+					boolean updateResult = rd.updateJobTitle(jtm.getJobTitleId(), "Superstar");
+					//boolean updateResult = rd.updateJobTitle(123456, "Superstar");
+					
+					if(updateResult == true) {
+						jtm.setJobTitleName("Superstar");
+						System.out.println("Job Title ID: " + jtm.getJobTitleId());
+						System.out.println("Job Title Name: " + jtm.getJobTitleName());
+					}
+				}
+			}
+
+			System.out.println("Deleting the job title just created");
+
+			boolean deleteResult = rd.removeJobTitle(jtm.getJobTitleId());
+			//boolean deleteResult = rd.removeJobTitle(99999999);
+			
+			System.out.println("Remove Job Title Successful: " + deleteResult);
+		}
+		else {
+			System.out.println("SQL Error in addJobTitle, job title model is: " + jtm);
+		}
+	*/		
+	}
+	
 }

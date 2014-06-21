@@ -4,11 +4,15 @@
 package com.thedawson.util.dao;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -60,14 +64,11 @@ public class DBManager {
 				
 				System.out.println("In Open Connection - Connection is null or closed");
 				
-				//Create connection
+				//Create connection and statement
+				//Reset resultset back to null
 				conn = ods.getConnection();
 				state = conn.createStatement();
-				
-				System.out.println("Setting AutoCommit to False");
-				
-				//Ensure all database operations are transactions by setting turning off autocommit
-				conn.setAutoCommit(false);
+				rs = null;
 			}
 		} catch (SQLException se) {
 			se.printStackTrace();
@@ -100,43 +101,86 @@ public class DBManager {
 	}
 	
 	/**
-	 * Executes all INSERT, UPDATE, or DELETE statements to the database
+	 * Executes all INSERT, UPDATE, or DELETE statements to the database and returns all generated key values if any
 	 * @return A list of Auto Generated Keys from insert, update, or delete if applicable.
 	 */
-	public ArrayList<CachedRowSet> executeQueryUpdate(ArrayList<String> sqls) {
+	public ArrayList<Integer> executeQueryUpdate(HashMap<String, String[]> sqlsWithAkgRows) {
 		this.openConnection();
 		
-		ArrayList<CachedRowSet> crs = new ArrayList<CachedRowSet>();
+		ArrayList<Integer> genKeysList = new ArrayList<Integer>();
 		Savepoint sp = null;
+		PreparedStatement ps = null;
 		
-		try {
+		try {			
+			//Ensure all database operations are transactions by setting turning off autocommit
+			conn.setAutoCommit(false);
+			
 			//Create Savepoint
-			sp = conn.setSavepoint("ECSelect_SP1");
+			sp = conn.setSavepoint("EQU_SP1");
 			
+			//Use an iterator to traverse the collection of queries with possible string array of auto gen key fields
+			//Run the queries and retrieve the auto gen key generated if an insert with fields are provided
+			Iterator<Map.Entry<String, String[]>> iter = sqlsWithAkgRows.entrySet().iterator();
 			
-			for (String s : sqls) {
-				state.executeUpdate(s, Statement.RETURN_GENERATED_KEYS);
-				rs = state.getGeneratedKeys();
-				CachedRowSet oneCrs = new CachedRowSetImpl();
-				oneCrs.populate(rs);
+			while (iter.hasNext()) {
+				Map.Entry<String, String[]> elem = iter.next();
+				String[] agkRows = elem.getValue();
 				
-				//Populate the Arraylist in order of the query run from sqls Arraylist
-				crs.add(oneCrs);
+				ps = conn.prepareStatement(elem.getKey(), agkRows);
+				int rowCount = ps.executeUpdate();
+				
+				System.out.println("Rowcount on exec Update: " + rowCount);
+				
+				//If a statement was run that changed nothing in the database that was expected to, throw SQL error
+				if(rowCount == 0) {
+					throw new SQLException("Execute Query on sql string that updated no database rows");
+				}
+				
+				//Only request generated keys if there is list of row headings from method parameters
+				if(agkRows != null) {
+					rs = ps.getGeneratedKeys();
+				}
+				
+				//Determine if the sql statement yielded any generated keys, if not then it's null
+				//Add a generated key or null value to the genKeys array always
+				//Add gen key when row headings provided or null if not (i.e. UPDATE, DELETE, or INSERT with no agk's)
+				Integer aKey = null; 
+						
+				if(rs != null) {
+					rs.next();
+					int curKey = rs.getInt(1);
+					System.out.println("ID: " + curKey);
+
+					aKey = new Integer(curKey);
+					
+					//Populate the Arraylist in order of the query run
+					genKeysList.add(aKey);
+				}
+				else {
+					genKeysList.add(null);
+				}
+				
+				//Reset the resultset for the next iteration.
+				rs = null;
 			}
 			
 			//Commit all transaction from the batch DML statements
 			conn.commit();
+			
+			//Re-establish autocommit
+			conn.setAutoCommit(true);
+			
 		} catch (SQLException se) {
 			se.printStackTrace();
 			
 			//An error occured processing a DML statement, rollback whole transaction and return null
 			try { conn.rollback(sp); } catch (SQLException se1) { se1.printStackTrace(); }
-			crs = null;
+			genKeysList = null;
 		}
 
 		this.closeConnection();
 		
-		return crs;
+		return genKeysList;
 	}
 	
 	/**
