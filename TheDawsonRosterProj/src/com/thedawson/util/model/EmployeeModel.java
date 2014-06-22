@@ -9,14 +9,16 @@ public class EmployeeModel {
 	private int employeeId;
 	private String firstName;
 	private String lastName;
+	private String email;
 	private String userName;
 	private String encrPassword;
 	
 	//Constructor
-	public EmployeeModel(int employeeId, String firstName, String lastName, String userName, String encrPassword) {
+	public EmployeeModel(int employeeId, String firstName, String lastName, String email, String userName, String encrPassword) {
 		this.employeeId = employeeId;
 		this.firstName = firstName;
 		this.lastName = lastName;
+		this.email = email;
 		this.userName = userName;
 		this.encrPassword = encrPassword;
 	}
@@ -44,6 +46,14 @@ public class EmployeeModel {
 
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getUserName() {

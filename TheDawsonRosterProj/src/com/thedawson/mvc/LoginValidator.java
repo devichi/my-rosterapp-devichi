@@ -33,18 +33,22 @@ public class LoginValidator extends HttpServlet {
 		RosterDAOFactory rdf = new RosterDAOFactory();
 		RosterDAO rd = rdf.getDao();
 		
-		JobTitleModel jtm = rd.getJobTitleById(3);
+		rd.addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 4);
+		
+		/*JobTitleModel jtm = rd.getJobTitleById(3);
 		//JobTitleModel jtm = rd.getJobTitleById(8888);
 		
 		if (jtm != null) {
 			System.out.println("Job Title ID: " + jtm.getJobTitleId());
 			System.out.println("Job Title Name: " + jtm.getJobTitleName());
 		}
+		*/
 		
 		/*
 		System.out.println("Calling the DAO object add Job Title method");
 		
 		JobTitleModel jtm = rd.addJobTitle("Spaceman");
+		//JobTitleModel jtm = rd.addJobTitle(null);
 		
 		if(jtm != null) {
 			System.out.println("Finished creating job Title, Print returned JT Model object details");
@@ -87,7 +91,7 @@ public class LoginValidator extends HttpServlet {
 		else {
 			System.out.println("SQL Error in addJobTitle, job title model is: " + jtm);
 		}
-	*/		
+		*/
 	}
 	
 }
