@@ -2,7 +2,6 @@ package com.thedawson.util.dao;
 
 //import java.sql.Connection;
 //import java.sql.ResultSet;
-//import java.sql.SQLException;
 //import java.sql.Statement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -77,19 +76,24 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	@Override
 	public JobTitleModel addJobTitle(String title) {
 		
-		HashMap<String, String[]> sqlWithAkgRows = new HashMap<String, String[]>();
+		//Ensure the title is not null value first, then proceed
+		if(title == null) {
+			return null;
+		}
+		
+		HashMap<String, String[]> sqlWithAkgCols = new HashMap<String, String[]>();
 		ArrayList<Integer> genKeysList = null;
 		JobTitleModel jtm = null;
 
 		//Create SQL Query and execute it
 		String sql = "INSERT INTO jobtitle VALUES (null, '" + title + "')";
-		String[] akgRows = {"job_id"};
-		sqlWithAkgRows.put(sql, akgRows);
+		String[] akgCols = {"job_id"};
+		sqlWithAkgCols.put(sql, akgCols);
 
 		System.out.println(sql);
 
 		//Retrieve the auto generated key from the database
-		genKeysList = dbm.executeQueryUpdate(sqlWithAkgRows);
+		genKeysList = dbm.executeQueryUpdateAuto(sqlWithAkgCols);
 		
 		//If there was a SQL Error in executeQueryUpdate then genKeyList will be null
 		if(genKeysList == null) {
@@ -116,16 +120,16 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 */
 	@Override
 	public boolean removeJobTitle(int jobid) {
-		HashMap<String, String[]> sqlWithAkgRows = new HashMap<String, String[]>();
+		HashMap<String, String[]> sqlWithAkgCols = new HashMap<String, String[]>();
 		
 		//Create SQL Query and execute it
 		String sql = "DELETE FROM jobtitle WHERE job_id = " + jobid;
-		sqlWithAkgRows.put(sql, null);
+		sqlWithAkgCols.put(sql, null);
 		
 		System.out.println(sql);
 		
 		//Execute the db removal
-		if(dbm.executeQueryUpdate(sqlWithAkgRows) != null) {
+		if(dbm.executeQueryUpdateAuto(sqlWithAkgCols) != null) {
 			return true;
 		}
 		
@@ -140,17 +144,23 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 * @return boolean determine if the update ran successfully or was rolled back and failed
 	 */
 	@Override
-	public boolean updateJobTitle(int jobid, String title) {
-		HashMap<String, String[]> sqlWithAkgRows = new HashMap<String, String[]>();
+	public boolean updateJobTitle(int jobid, String title) {	
+		
+		//Ensure the title is not null value first, then proceed
+		if(title == null) {
+			return false;
+		}
+		
+		HashMap<String, String[]> sqlWithAkgCols = new HashMap<String, String[]>();
 		
 		//Create SQL Query and execute it
 		String sql = "UPDATE jobtitle SET job_title = '" + title + "' WHERE job_id = " + jobid;
-		sqlWithAkgRows.put(sql, null);
+		sqlWithAkgCols.put(sql, null);
 		
 		System.out.println(sql);
 		
 		//Execute the db removal
-		if (dbm.executeQueryUpdate(sqlWithAkgRows) != null) {
+		if (dbm.executeQueryUpdateAuto(sqlWithAkgCols) != null) {
 			return true;
 		}
 		
@@ -236,8 +246,69 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	@Override
 	public EmployeeModel addEmployee(String firstN, String lastN, String email,
 			String userid, String pwd, int hotelid, int jobid) {
-		// TODO Auto-generated method stub
-		return null;
+				
+				//Ensure the title is not null value first, then proceed
+				if(firstN == null || lastN == null || email == null || userid == null || pwd == null) {
+					return null;
+				}
+				
+				EmployeeModel em = null;
+
+				//Create SQL Query and execute it
+				try {
+					//Open a manual connection
+					dbm.openConnection();
+					
+					//Set Auto Commit off manually
+					dbm.setAutoCommit(false);
+					
+					//Execute query to insert into employee table
+					String sql = "INSERT INTO employee VALUES (null, '" + firstN + "', '" + lastN + "', '" + email + "', '" 
+							+ userid + "', '" + pwd + "')"; 
+					String[] akgCols = {"e_id"};
+
+					System.out.println(sql);
+
+					//Retrieve the auto generated key from the database
+					Integer empGk = dbm.executeOneQueryUpdate(sql, akgCols);
+
+					System.out.println("Generated Key Employee: " + empGk);
+					
+					//If no auto gen keys were returned then there's a problem
+					if(empGk == null) {
+						throw new SQLException ("Query failed to retrieve generated keys when expected");
+					}
+
+					//No error, so continue processing
+					//Execute query to insert into employee directory table
+					String sql2 = "INSERT INTO employeedir VALUES (null, " + hotelid + ", " + empGk + ", " + jobid + ")";
+					String[] akgCols2 = {"empldir_id"};
+
+					System.out.println(sql2);
+
+					//Commit and close all connections with true parameter after the query update
+					Integer empDirGk = dbm.executeOneQueryUpdate(sql2, akgCols2);
+
+					System.out.println("Generated Key Employee Dir: " + empDirGk);
+					
+					//Create the employee object model for return
+					em = new EmployeeModel(empGk, firstN, lastN, email, userid, pwd);
+					
+					//Set Auto Commit back to on manually
+					dbm.setAutoCommit(true);
+					
+					//Close Connection manually
+					dbm.closeConnection();
+					
+				} catch (SQLException se) {
+					se.printStackTrace();
+					
+					//Rollback manually
+					try { dbm.rollback(); } catch (SQLException se2) { se2.printStackTrace(); }
+					em = null;
+				}
+				
+				return em;
 	}
 
 
