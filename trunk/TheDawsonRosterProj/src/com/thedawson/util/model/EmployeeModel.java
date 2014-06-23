@@ -12,15 +12,18 @@ public class EmployeeModel {
 	private String email;
 	private String userName;
 	private String encrPassword;
+	private String isActive;
 	
 	//Constructor
-	public EmployeeModel(int employeeId, String firstName, String lastName, String email, String userName, String encrPassword) {
+	public EmployeeModel(int employeeId, String firstName, String lastName, String email, String userName, 
+						String encrPassword, String isActive) {
 		this.employeeId = employeeId;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.email = email;
 		this.userName = userName;
 		this.encrPassword = encrPassword;
+		this.isActive = isActive;
 	}
 
 	//Getters and Setters for the class
@@ -70,6 +73,14 @@ public class EmployeeModel {
 
 	public void setEncrPassword(String encrPassword) {
 		this.encrPassword = encrPassword;
+	}
+
+	public String getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(String isActive) {
+		this.isActive = isActive;
 	}
 	
 }

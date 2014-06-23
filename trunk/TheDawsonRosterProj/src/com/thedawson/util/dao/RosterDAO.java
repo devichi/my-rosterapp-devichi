@@ -12,6 +12,7 @@ public interface RosterDAO {
 	//RosterDAO interface methods
 	public JobTitleModel addJobTitle(String title);
 	public boolean removeJobTitle(int jobid);
+	public boolean setJobTitleActiveStatus(int jobid, boolean state);
 	public boolean updateJobTitle(int jobid, String title);
 	public ArrayList<JobTitleModel> getJobTitles();
 	public JobTitleModel getJobTitleById(int jobid);

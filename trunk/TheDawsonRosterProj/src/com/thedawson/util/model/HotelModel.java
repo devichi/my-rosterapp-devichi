@@ -15,11 +15,12 @@ public class HotelModel {
 	private String hotelCountry;
 	private String hotelTelephoneNum;
 	private String hotelFaxNum;
+	private String isActive;
 	
 	//Constructor
 	public HotelModel(int hotelId, String hotelName, String hotelAddress,
 			String hotelCity, String hotelCountry, String hotelTelephoneNum,
-			String hotelFaxNum) {
+			String hotelFaxNum, String isActive) {
 		this.hotelId = hotelId;
 		this.hotelName = hotelName;
 		this.hotelAddress = hotelAddress;
@@ -27,6 +28,7 @@ public class HotelModel {
 		this.hotelCountry = hotelCountry;
 		this.hotelTelephoneNum = hotelTelephoneNum;
 		this.hotelFaxNum = hotelFaxNum;
+		this.isActive = isActive;
 	}
 
 	//Getters and Setters for the class
@@ -84,6 +86,14 @@ public class HotelModel {
 
 	public void setHotelFaxNum(String hotelFaxNum) {
 		this.hotelFaxNum = hotelFaxNum;
+	}
+
+	public String getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(String isActive) {
+		this.isActive = isActive;
 	}
 	
 }

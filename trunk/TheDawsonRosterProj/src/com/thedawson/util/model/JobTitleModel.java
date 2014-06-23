@@ -10,11 +10,13 @@ package com.thedawson.util.model;
 public class JobTitleModel {
 	private int jobTitleId;
 	private String jobTitleName;
+	private String isActive;
 	
 	//Constructor
-	public JobTitleModel(int jobTitleId, String jobTitleName) {
+	public JobTitleModel(int jobTitleId, String jobTitleName, String isActive) {
 		this.jobTitleId = jobTitleId;
 		this.jobTitleName = jobTitleName;
+		this.isActive = isActive;
 	}
 
 	//Getters and Setters for the class
@@ -32,5 +34,13 @@ public class JobTitleModel {
 
 	public void setJobTitleName(String jobTitleName) {
 		this.jobTitleName = jobTitleName;
+	}
+
+	public String getIsActive() {
+		return isActive;
+	}
+
+	public void setIsActive(String isActive) {
+		this.isActive = isActive;
 	}
 }
