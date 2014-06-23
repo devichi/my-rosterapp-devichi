@@ -86,7 +86,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 		JobTitleModel jtm = null;
 
 		//Create SQL Query and execute it
-		String sql = "INSERT INTO jobtitle VALUES (null, '" + title + "')";
+		String sql = "INSERT INTO jobtitle VALUES (null, '" + title + "', 'Y')";
 		String[] akgCols = {"job_id"};
 		sqlWithAkgCols.put(sql, akgCols);
 
@@ -106,7 +106,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 		
 		//Create the job title object model for return
 		System.out.println("Generated Key Job Title: " + jobGk);
-		jtm = new JobTitleModel(jobGk, title);
+		jtm = new JobTitleModel(jobGk, title, "Y");
 		
 		return jtm;
 	}
@@ -135,7 +135,38 @@ public class RosterDAOOracleImpl implements RosterDAO {
 		
 		return false;
 	}
-
+	
+	/* Changes the Active status of the job title
+	 * @param state true for activate, false for make inactive
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
+	 */
+	@Override
+	public boolean setJobTitleActiveStatus(int jobid, boolean state) {
+		HashMap<String, String[]> sqlWithAkgCols = new HashMap<String, String[]>();
+		
+		//Create SQL Query and execute it
+		String status = null;
+		
+		if(state) {
+			status = "Y";
+		}
+		else {
+			status = "N";
+		}
+			
+		
+		String sql = "UPDATE jobtitle SET is_active = '" + status + "' WHERE job_id = " + jobid;
+		sqlWithAkgCols.put(sql, null);
+		
+		System.out.println(sql);
+		
+		//Execute the db removal
+		if(dbm.executeQueryUpdateAuto(sqlWithAkgCols) != null) {
+			return true;
+		}
+		
+		return false;
+	}
 
 
 	/* Updates the job title from the database
@@ -189,8 +220,9 @@ public class RosterDAOOracleImpl implements RosterDAO {
 				
 				int jobId = crs.getInt(1);
 				String jobTitle = crs.getString(2);
+				String isActive = crs.getString(3);
 
-				jtmList.add(new JobTitleModel(jobId, jobTitle));
+				jtmList.add(new JobTitleModel(jobId, jobTitle, isActive));
 			}
 		} catch (SQLException se) {
 			jtmList = null;
@@ -226,8 +258,9 @@ public class RosterDAOOracleImpl implements RosterDAO {
 
 				int jobId = crs.getInt(1);
 				String jobTitle = crs.getString(2);
+				String isActive = crs.getString(3);
 
-				jtm = new JobTitleModel(jobId, jobTitle);
+				jtm = new JobTitleModel(jobId, jobTitle, isActive);
 
 			} catch (SQLException se) {
 				jtm = null;
@@ -264,7 +297,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 					
 					//Execute query to insert into employee table
 					String sql = "INSERT INTO employee VALUES (null, '" + firstN + "', '" + lastN + "', '" + email + "', '" 
-							+ userid + "', '" + pwd + "')"; 
+							+ userid + "', '" + pwd + "', " + "'Y')"; 
 					String[] akgCols = {"e_id"};
 
 					System.out.println(sql);
@@ -292,7 +325,10 @@ public class RosterDAOOracleImpl implements RosterDAO {
 					System.out.println("Generated Key Employee Dir: " + empDirGk);
 					
 					//Create the employee object model for return
-					em = new EmployeeModel(empGk, firstN, lastN, email, userid, pwd);
+					em = new EmployeeModel(empGk, firstN, lastN, email, userid, pwd, "Y");
+					
+					//Commit the transaction
+					dbm.commit();
 					
 					//Set Auto Commit back to on manually
 					dbm.setAutoCommit(true);
@@ -318,7 +354,6 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 */
 	@Override
 	public void removeEmployee(int empid) {
-		// TODO Auto-generated method stub
 		
 	}
 

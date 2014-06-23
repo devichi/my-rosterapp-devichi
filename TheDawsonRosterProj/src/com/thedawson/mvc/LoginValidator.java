@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.thedawson.util.dao.RosterDAO;
 import com.thedawson.util.dao.RosterDAOFactory;
+import com.thedawson.util.model.EmployeeModel;
 import com.thedawson.util.model.JobTitleModel;
 
 /**
@@ -33,7 +34,19 @@ public class LoginValidator extends HttpServlet {
 		RosterDAOFactory rdf = new RosterDAOFactory();
 		RosterDAO rd = rdf.getDao();
 		
-		rd.addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 4);
+		/*
+		EmployeeModel em = rd.addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 4);
+		//EmployeeModel em = rd.addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 9);
+		
+		if(em != null) {
+			System.out.println("FName: " + em.getFirstName() + " LName: " + em.getLastName() + " Email: " + em.getEmail() 
+							+ " User: " + em.getUserName() + " Pwd: " + em.getEncrPassword() + " isActive: " + em.getIsActive());
+		
+		}
+		else {
+			System.out.println("Employee Model Null: " + (em == null));
+		}
+		*/
 		
 		/*JobTitleModel jtm = rd.getJobTitleById(3);
 		//JobTitleModel jtm = rd.getJobTitleById(8888);
@@ -41,10 +54,11 @@ public class LoginValidator extends HttpServlet {
 		if (jtm != null) {
 			System.out.println("Job Title ID: " + jtm.getJobTitleId());
 			System.out.println("Job Title Name: " + jtm.getJobTitleName());
+			System.out.println("Job Title Active: " + jtm.getIsActive());
 		}
 		*/
 		
-		/*
+		
 		System.out.println("Calling the DAO object add Job Title method");
 		
 		JobTitleModel jtm = rd.addJobTitle("Spaceman");
@@ -54,17 +68,19 @@ public class LoginValidator extends HttpServlet {
 			System.out.println("Finished creating job Title, Print returned JT Model object details");
 			System.out.println("Job Title ID: " + jtm.getJobTitleId());
 			System.out.println("Job Title Name: " + jtm.getJobTitleName());
+			System.out.println("Job Title isActive: " + jtm.getIsActive());
 
 			System.out.println("Printing all Job Titles in the database");
 
-			for(int i=0; i < 2; i++) {
+			for(int i=0; i < 3; i++) {
 				ArrayList<JobTitleModel> jtmList = rd.getJobTitles();
 
 				Iterator<JobTitleModel> iter = jtmList.iterator();
 				while (iter.hasNext()) {
 					JobTitleModel curJtm = (JobTitleModel) iter.next();
 
-					System.out.println("JT Id: " + curJtm.getJobTitleId() + " JT title: " + curJtm.getJobTitleName());
+					System.out.println("JT Id: " + curJtm.getJobTitleId() + " JT title: " + curJtm.getJobTitleName() + 
+										" isActive: " + curJtm.getIsActive());
 				}
 
 				if (i == 0) {
@@ -77,6 +93,19 @@ public class LoginValidator extends HttpServlet {
 						jtm.setJobTitleName("Superstar");
 						System.out.println("Job Title ID: " + jtm.getJobTitleId());
 						System.out.println("Job Title Name: " + jtm.getJobTitleName());
+						System.out.println("Job Title isActive: " + jtm.getIsActive());
+					}
+				}
+				else if(i == 1) {
+					System.out.println("Changing the active status of job title to No");
+					
+					boolean csResult = rd.setJobTitleActiveStatus(jtm.getJobTitleId(), false);
+					
+					if(csResult == true) {
+						jtm.setIsActive("N");
+						System.out.println("Job Title ID: " + jtm.getJobTitleId());
+						System.out.println("Job Title Name: " + jtm.getJobTitleName());
+						System.out.println("Job Title isActive: " + jtm.getIsActive());
 					}
 				}
 			}
@@ -91,7 +120,7 @@ public class LoginValidator extends HttpServlet {
 		else {
 			System.out.println("SQL Error in addJobTitle, job title model is: " + jtm);
 		}
-		*/
+		
 	}
 	
 }
