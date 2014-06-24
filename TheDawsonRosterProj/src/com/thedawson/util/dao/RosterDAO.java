@@ -18,26 +18,35 @@ public interface RosterDAO {
 	public JobTitleModel getJobTitleById(int jobid);
 	
 	public EmployeeModel addEmployee(String firstN, String lastN, String email, String userid, String pwd, int hotelid, int jobid);
-	public void removeEmployee(int empid);
-	public void updateEmployee(int empid, String firstN, String lastN, String email, String userid, String pwd, int hotelid, int jobid);
+	public boolean removeEmployee(int empid);
+	public boolean setEmployeeActiveStatus(int empid, boolean state);
+	public boolean updateEmployee(int empid, String firstN, String lastN, String email, String userid, String pwd, int hotelid, int jobid);
 	public ArrayList<EmployeeModel> getAllEmployees();
 	public EmployeeModel getEmployeeById(int empid);
 	
+	public EmployeeDirModel addEmployeeDir(int hotelid, int empid, int jobid);
+	public boolean removeEmployeeDir(int empdirid);
+	public boolean setEmployeeDirActiveStatus(int empdirid, boolean state);
+	public boolean updateEmployeeDir(int empdirid, int hotelid, int empid, int jobid);
+	public ArrayList<EmployeeDirModel> getAllEmployeeDirs();
+	public EmployeeModel getEmployeeDirById(int empdirid);
+	
 	public HotelModel addHotel(String hname, String haddr, String hcity, String hcntry, String hphone, String hfax);
-	public void removeHotel(int hotelid);
-	public void updateHotel(int hotelid, String hname, String haddr, String hcity, String hcntry, String hphone, String hfax);
+	public boolean removeHotel(int hotelid);
+	public boolean setHotelActiveStatus(int hotid, boolean state);
+	public boolean updateHotel(int hotelid, String hname, String haddr, String hcity, String hcntry, String hphone, String hfax);
 	public ArrayList<HotelModel> getAllHotels();
 	public HotelModel getHotelById(int hotelid);
 	
 	public WorkScheduleModel addNextWorkSchedule(int hotelid, Date startD, Date endD);
-	public void deleteAWorkSchedule(int ws_id);
-	public void updateCurWorkSchedule(int ws_id, int hotelid, Date startD, Date endD);
+	public boolean deleteAWorkSchedule(int ws_id);
+	public boolean updateCurWorkSchedule(int ws_id, int hotelid, Date startD, Date endD);
 	public ArrayList<WorkScheduleModel> getSchedulesByDate(Date startD, Date endD);
 	public WorkScheduleModel getScheduleByID(int ws_id);
 	
 	public WorkDayModel addWorkDay(int wrksched_id, int emp_id, int job_id, Date shift_date, double shift_len);
-	public void deleteAWorkDay(int wd_id);
-	public void updateAWorkDay(int wd_id, int wrksched_id, int emp_id, int job_id, Date shift_date, double shift_len);
+	public boolean deleteAWorkDay(int wd_id);
+	public boolean updateAWorkDay(int wd_id, int wrksched_id, int emp_id, int job_id, Date shift_date, double shift_len);
 	public ArrayList<WorkDayModel> getWorkDaysByDate(Date startD, Date endD);
 	public ArrayList<WorkDayModel> getWorkDaysBySchedIDs(ArrayList<Integer> sched_ids);
 }

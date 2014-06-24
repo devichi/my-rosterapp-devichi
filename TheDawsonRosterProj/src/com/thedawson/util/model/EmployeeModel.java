@@ -12,11 +12,11 @@ public class EmployeeModel {
 	private String email;
 	private String userName;
 	private String encrPassword;
-	private String isActive;
+	private boolean isActive;
 	
 	//Constructor
 	public EmployeeModel(int employeeId, String firstName, String lastName, String email, String userName, 
-						String encrPassword, String isActive) {
+						String encrPassword, boolean isActive) {
 		this.employeeId = employeeId;
 		this.firstName = firstName;
 		this.lastName = lastName;
@@ -75,11 +75,11 @@ public class EmployeeModel {
 		this.encrPassword = encrPassword;
 	}
 
-	public String getIsActive() {
+	public boolean getIsActive() {
 		return isActive;
 	}
 
-	public void setIsActive(String isActive) {
+	public void setIsActive(boolean isActive) {
 		this.isActive = isActive;
 	}
 	

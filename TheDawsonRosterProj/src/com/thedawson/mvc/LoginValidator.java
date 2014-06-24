@@ -34,21 +34,38 @@ public class LoginValidator extends HttpServlet {
 		RosterDAOFactory rdf = new RosterDAOFactory();
 		RosterDAO rd = rdf.getDao();
 		
-		/*
+		
+		System.out.println("Adding a new employee to the database");
+		
 		EmployeeModel em = rd.addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 4);
 		//EmployeeModel em = rd.addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 9);
 		
 		if(em != null) {
 			System.out.println("FName: " + em.getFirstName() + " LName: " + em.getLastName() + " Email: " + em.getEmail() 
 							+ " User: " + em.getUserName() + " Pwd: " + em.getEncrPassword() + " isActive: " + em.getIsActive());
-		
+
+			System.out.println("Setting added employee active status to No");
+			
+			boolean eStatus = rd.setEmployeeActiveStatus(em.getEmployeeId(), false);
+			
+			if(eStatus == true) {
+				em.setIsActive(false);
+				System.out.println("FName: " + em.getFirstName() + " LName: " + em.getLastName() + " Email: " + em.getEmail() 
+						+ " User: " + em.getUserName() + " Pwd: " + em.getEncrPassword() + " isActive: " + em.getIsActive());
+			}
+			
+			System.out.println("Deleting added employee from the database");
+			
+			rd.removeEmployee(em.getEmployeeId());
 		}
 		else {
 			System.out.println("Employee Model Null: " + (em == null));
 		}
-		*/
 		
-		/*JobTitleModel jtm = rd.getJobTitleById(3);
+		
+		
+		/*
+		JobTitleModel jtm = rd.getJobTitleById(5);
 		//JobTitleModel jtm = rd.getJobTitleById(8888);
 		
 		if (jtm != null) {
@@ -58,7 +75,7 @@ public class LoginValidator extends HttpServlet {
 		}
 		*/
 		
-		
+		/*
 		System.out.println("Calling the DAO object add Job Title method");
 		
 		JobTitleModel jtm = rd.addJobTitle("Spaceman");
@@ -100,6 +117,7 @@ public class LoginValidator extends HttpServlet {
 					System.out.println("Changing the active status of job title to No");
 					
 					boolean csResult = rd.setJobTitleActiveStatus(jtm.getJobTitleId(), false);
+					//boolean csResult = rd.setJobTitleActiveStatus(88888889, false);
 					
 					if(csResult == true) {
 						jtm.setIsActive("N");
@@ -120,7 +138,7 @@ public class LoginValidator extends HttpServlet {
 		else {
 			System.out.println("SQL Error in addJobTitle, job title model is: " + jtm);
 		}
-		
+		*/
 	}
 	
 }

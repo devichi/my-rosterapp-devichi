@@ -159,11 +159,11 @@ public class DBManager {
 	 * @return A list of Auto Generated Keys from insert, update, or delete if applicable.
 	 */
 	public ArrayList<Integer> executeQueryUpdateAuto(HashMap<String, String[]> sqlsWithAkgCols) {
-		//Open Connection
-		this.openConnection();
-		
 		Savepoint sp = null;
 		ArrayList<Integer> genKeysList = new ArrayList<Integer>();
+		
+		//Open Connection
+		this.openConnection();
 		
 		try {
 			//Ensure all database operations are transactions by setting turning off autocommit
