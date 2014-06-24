@@ -292,7 +292,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	public EmployeeModel addEmployee(String firstN, String lastN, String email,
 			String userid, String pwd, int hotelid, int jobid) {
 				
-				//Ensure the title is not null value first, then proceed
+				//Ensure all of the String parameters are not null first, then proceed
 				if(firstN == null || lastN == null || email == null || userid == null || pwd == null) {
 					return null;
 				}
@@ -432,7 +432,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	public boolean updateEmployee(int empid, String firstN, String lastN,
 			String email, String userid, String pwd, int hotelid, int jobid) {
 		
-		//Ensure the title is not null value first, then proceed
+		//Ensure all String parameters are not null first, then proceed
 		if(firstN == null || lastN == null || email == null || userid == null || pwd == null) {
 			return false;
 		}
@@ -444,7 +444,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 				+ "last_name = '" + lastN + "', "
 				+ "email = '" + email + "', "
 				+ "username = '" + userid + "', "
-				+ "encr_pwd = '" + pwd + "', "
+				+ "encr_pwd = '" + pwd + "' "
 				+ " WHERE e_id = " + empid;
 		sqlsWithAkgCols.put(sql, null);
 
@@ -577,7 +577,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 		Integer edGenKey = genKeysList.get(0);
 		int edGk = edGenKey.intValue();
 
-		//Create the job title object model for return
+		//Create the emp dir object model for return
 		System.out.println("Generated Key Empl Dir: " + edGk);
 		edm = new EmployeeDirModel(edGk, hotelid, empid, jobid, true);
 
@@ -759,8 +759,41 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	@Override
 	public HotelModel addHotel(String hname, String haddr, String hcity,
 			String hcntry, String hphone, String hfax) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		//Ensure none of the String parameters are null first, then proceed
+		if(hname == null || haddr == null || hcity == null || hcntry == null || hphone == null || hfax == null) {
+			return null;
+		}
+
+		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
+		ArrayList<Integer> genKeysList = null;
+		HotelModel hm = null;
+
+		//Create SQL Query and execute it
+		String sql = "INSERT INTO hotel VALUES (null, '" + hname + "', '" + haddr + "', '" + hcity + "', '" + hcntry + "', '" 
+							+ hphone + "', '" + hfax + "', 'Y')";
+		String[] akgCols = {"h_id"};
+		sqlsWithAkgCols.put(sql, akgCols);
+
+		System.out.println(sql);
+
+		//Retrieve the auto generated key from the database
+		genKeysList = dbm.executeQueryUpdateAuto(sqlsWithAkgCols);
+
+		//If there was a SQL Error in executeQueryUpdateAuto then genKeyList will be null
+		if(genKeysList == null) {
+			return hm;
+		}
+
+		//No error, so process genKeyList
+		Integer hGenKey = genKeysList.get(0);
+		int hotGk = hGenKey.intValue();
+
+		//Create the hotel object model for return
+		System.out.println("Generated Key Hotel: " + hotGk);
+		hm = new HotelModel(hotGk, hname, haddr, hcity, hcntry, hphone, hfax, true);
+
+		return hm;
 	}
 
 
@@ -770,8 +803,20 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 */
 	@Override
 	public boolean removeHotel(int hotelid) {
-		// TODO Auto-generated method stub
-		return false;
+		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
+		
+		//Create SQL Query and execute it
+		String sql = "DELETE FROM hotel WHERE h_id = " + hotelid;
+		sqlsWithAkgCols.put(sql, null);
+		
+		System.out.println(sql);
+		
+		//Execute the db removal
+		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
+			return false;
+		}
+		
+		return true;
 	}
 
 
@@ -780,8 +825,31 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 * @return boolean determine if the update ran successfully or was rolled back and failed
 	 */
 	@Override
-	public boolean setHotelActiveStatus(int hotid, boolean state) {
-		return false;
+	public boolean setHotelActiveStatus(int hotelid, boolean state) {
+		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
+		
+		//Create SQL Query and execute it
+		String status = null;
+		
+		if(state) {
+			status = "Y";
+		}
+		else {
+			status = "N";
+		}
+			
+		
+		String sql = "UPDATE hotel SET is_active = '" + status + "' WHERE h_id = " + hotelid;
+		sqlsWithAkgCols.put(sql, null);
+		
+		System.out.println(sql);
+		
+		//Execute the db removal
+		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
+			return false;
+		}
+		
+		return true;
 	}
 	
 
@@ -791,8 +859,32 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	@Override
 	public boolean updateHotel(int hotelid, String hname, String haddr,
 			String hcity, String hcntry, String hphone, String hfax) {
-		// TODO Auto-generated method stub
-		return false;
+		
+		//Ensure the String parameters are not null first, then proceed
+		if(hname == null || haddr == null || hcity == null || hcntry == null || hphone == null || hfax == null) {
+			return false;
+		}
+
+		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
+
+		//Create SQL Query and execute it
+		String sql = "UPDATE hotel SET h_name = '" + hname + "', "
+				+ "h_addr = '" + haddr + "', "
+				+ "h_city = '" + hcity + "', "
+				+ "h_country = '" + hcntry + "', "
+				+ "h_tel = '" + hphone + "', "
+				+ "h_fax = '" + hfax + "' "
+				+ " WHERE h_id = " + hotelid;
+		sqlsWithAkgCols.put(sql, null);
+
+		System.out.println(sql);
+
+		//Execute the db removal
+		if (dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
+			return false;
+		}
+
+		return true;
 	}
 
 
@@ -802,8 +894,40 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 */
 	@Override
 	public ArrayList<HotelModel> getAllHotels() {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<HotelModel> hList = new ArrayList<HotelModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM hotel";
+		
+		System.out.println(sql);
+		
+		CachedRowSet crs = dbm.executeQuerySelect(sql);
+		
+		try {
+			while (crs.next()) {
+				
+				int hotelId = crs.getInt(1);
+				String hName = crs.getString(2);
+				String hAddr = crs.getString(3);
+				String hCity = crs.getString(4);
+				String hCntry = crs.getString(5);
+				String hTel = crs.getString(6);
+				String hFax = crs.getString(7);
+				String isActive = crs.getString(8);
+				
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				hList.add(new HotelModel(hotelId, hName, hAddr, hCity, hCntry, hTel, hFax, isActiveBool));
+			}
+		} catch (SQLException se) {
+			hList = null;
+			se.printStackTrace();
+		}
+		
+		return hList;
 	}
 
 
@@ -813,8 +937,44 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 */
 	@Override
 	public HotelModel getHotelById(int hotelid) {
-		// TODO Auto-generated method stub
-		return null;
+		HotelModel hm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM hotel where h_id = " + hotelid;
+		
+		System.out.println(sql);
+		
+		CachedRowSet crs = dbm.executeQuerySelect(sql);
+		
+		//If crs is empty then no row exists with provided h_id, return null hotel model below
+		//Otherwise do the try catch and create hotel model object
+		if(crs.size() != 0) {
+			try {
+				crs.next();
+
+				int hotelId = crs.getInt(1);
+				String hName = crs.getString(2);
+				String hAddr = crs.getString(3);
+				String hCity = crs.getString(4);
+				String hCntry = crs.getString(5);
+				String hTel = crs.getString(6);
+				String hFax = crs.getString(7);
+				String isActive = crs.getString(8);
+				
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				hm = new HotelModel(hotelId, hName, hAddr, hCity, hCntry, hTel, hFax, isActiveBool);
+
+			} catch (SQLException se) {
+				hm = null;
+				se.printStackTrace();
+			}
+		}
+		
+		return hm;
 	}
 
 
