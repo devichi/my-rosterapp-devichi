@@ -33,7 +33,7 @@ public interface RosterDAO {
 	
 	public HotelModel addHotel(String hname, String haddr, String hcity, String hcntry, String hphone, String hfax);
 	public boolean removeHotel(int hotelid);
-	public boolean setHotelActiveStatus(int hotid, boolean state);
+	public boolean setHotelActiveStatus(int hotelid, boolean state);
 	public boolean updateHotel(int hotelid, String hname, String haddr, String hcity, String hcntry, String hphone, String hfax);
 	public ArrayList<HotelModel> getAllHotels();
 	public HotelModel getHotelById(int hotelid);
