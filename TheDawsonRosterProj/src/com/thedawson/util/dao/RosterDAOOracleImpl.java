@@ -207,7 +207,7 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 * @return the arraylist of all the job title rows in the database in model objects
 	 */
 	@Override
-	public ArrayList<JobTitleModel> getJobTitles() {
+	public ArrayList<JobTitleModel> getAllJobTitles() {
 		ArrayList<JobTitleModel> jtmList = new ArrayList<JobTitleModel>();
 		
 		//Create SQL Query and execute it
@@ -517,8 +517,8 @@ public class RosterDAOOracleImpl implements RosterDAO {
 		
 		CachedRowSet crs = dbm.executeQuerySelect(sql);
 		
-		//If crs is empty then no row exists with provided jobid, return null job title model below
-		//Otherwise do the try catch and create job title model object
+		//If crs is empty then no row exists with provided empid, return null employee model below
+		//Otherwise do the try catch and create employee model object
 		if(crs.size() != 0) {
 			try {
 				crs.next();
@@ -591,8 +591,20 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 */
 	@Override
 	public boolean removeEmployeeDir(int empdirid) {
-		// TODO Auto-generated method stub
-		return false;
+		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
+		
+		//Create SQL Query and execute it
+		String sql = "DELETE FROM employeedir WHERE empldir_id = " + empdirid;
+		sqlsWithAkgCols.put(sql, null);
+		
+		System.out.println(sql);
+		
+		//Execute the db removal
+		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
+			return false;
+		}
+		
+		return true;
 	}
 
 
@@ -602,8 +614,30 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 */
 	@Override
 	public boolean setEmployeeDirActiveStatus(int empdirid, boolean state) {
-		// TODO Auto-generated method stub
-		return false;
+		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
+		
+		//Create SQL Query and execute it
+		String status = null;
+		
+		if(state) {
+			status = "Y";
+		}
+		else {
+			status = "N";
+		}
+			
+		
+		String sql = "UPDATE employeedir SET is_active = '" + status + "' WHERE empldir_id = " + empdirid;
+		sqlsWithAkgCols.put(sql, null);
+		
+		System.out.println(sql);
+		
+		//Execute the db removal
+		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
+			return false;
+		}
+		
+		return true;	
 	}
 
 
@@ -614,8 +648,23 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	@Override
 	public boolean updateEmployeeDir(int empdirid, int hotelid, int empid,
 			int jobid) {
-		// TODO Auto-generated method stub
-		return false;
+
+		HashMap<String, String[]> sqlWithAkgCols = new HashMap<String, String[]>();
+
+		//Create SQL Query and execute it
+		String sql = "UPDATE employeedir SET hotel_id = '" + hotelid + "', "
+				+ "emp_id = '" + empid + "' "
+				+ "WHERE empldir_id = " + empdirid;
+		sqlWithAkgCols.put(sql, null);
+
+		System.out.println(sql);
+
+		//Execute the db removal
+		if (dbm.executeQueryUpdateAuto(sqlWithAkgCols) == null) {
+			return false;
+		}
+
+		return true;
 	}
 
 
@@ -625,8 +674,37 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 */
 	@Override
 	public ArrayList<EmployeeDirModel> getAllEmployeeDirs() {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<EmployeeDirModel> edList = new ArrayList<EmployeeDirModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM employeedir";
+		
+		System.out.println(sql);
+		
+		CachedRowSet crs = dbm.executeQuerySelect(sql);
+		
+		try {
+			while (crs.next()) {
+				
+				int empdirId = crs.getInt(1);
+				int hotelId = crs.getInt(2);
+				int empId = crs.getInt(3);
+				int jobId = crs.getInt(4);
+				String isActive = crs.getString(5);
+				
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				edList.add(new EmployeeDirModel(empdirId, hotelId, empId, jobId, isActiveBool));
+			}
+		} catch (SQLException se) {
+			edList = null;
+			se.printStackTrace();
+		}
+		
+		return edList;
 	}
 
 
@@ -635,9 +713,42 @@ public class RosterDAOOracleImpl implements RosterDAO {
 	 * @see com.thedawson.util.dao.RosterDAO#getEmployeeDirById(int)
 	 */
 	@Override
-	public EmployeeModel getEmployeeDirById(int empdirid) {
-		// TODO Auto-generated method stub
-		return null;
+	public EmployeeDirModel getEmployeeDirById(int empdirid) {
+		EmployeeDirModel edm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM employeedir where empldir_id = " + empdirid;
+		
+		System.out.println(sql);
+		
+		CachedRowSet crs = dbm.executeQuerySelect(sql);
+		
+		//If crs is empty then no row exists with provided empdirid, return null employee dir model below
+		//Otherwise do the try catch and create employee dir model object
+		if(crs.size() != 0) {
+			try {
+				crs.next();
+
+				int empdirId = crs.getInt(1);
+				int hotelId = crs.getInt(2);
+				int empId = crs.getInt(3);
+				int jobId = crs.getInt(4);
+				String isActive = crs.getString(5);
+				
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				edm = new EmployeeDirModel(empdirId, hotelId, empId, jobId, isActiveBool);
+
+			} catch (SQLException se) {
+				edm = null;
+				se.printStackTrace();
+			}
+		}
+		
+		return edm;
 	}
 
 
@@ -739,6 +850,17 @@ public class RosterDAOOracleImpl implements RosterDAO {
 			Date endD) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getAllSchedules()
+	 */
+	@Override
+	public ArrayList<WorkScheduleModel> getAllSchedules() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 
