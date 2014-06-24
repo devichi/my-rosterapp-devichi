@@ -10,10 +10,10 @@ package com.thedawson.util.model;
 public class JobTitleModel {
 	private int jobTitleId;
 	private String jobTitleName;
-	private String isActive;
+	private boolean isActive;
 	
 	//Constructor
-	public JobTitleModel(int jobTitleId, String jobTitleName, String isActive) {
+	public JobTitleModel(int jobTitleId, String jobTitleName, boolean isActive) {
 		this.jobTitleId = jobTitleId;
 		this.jobTitleName = jobTitleName;
 		this.isActive = isActive;
@@ -36,11 +36,11 @@ public class JobTitleModel {
 		this.jobTitleName = jobTitleName;
 	}
 
-	public String getIsActive() {
+	public boolean getIsActive() {
 		return isActive;
 	}
 
-	public void setIsActive(String isActive) {
+	public void setIsActive(boolean isActive) {
 		this.isActive = isActive;
 	}
 }

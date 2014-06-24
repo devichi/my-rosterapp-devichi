@@ -15,12 +15,12 @@ public class HotelModel {
 	private String hotelCountry;
 	private String hotelTelephoneNum;
 	private String hotelFaxNum;
-	private String isActive;
+	private boolean isActive;
 	
 	//Constructor
 	public HotelModel(int hotelId, String hotelName, String hotelAddress,
 			String hotelCity, String hotelCountry, String hotelTelephoneNum,
-			String hotelFaxNum, String isActive) {
+			String hotelFaxNum, boolean isActive) {
 		this.hotelId = hotelId;
 		this.hotelName = hotelName;
 		this.hotelAddress = hotelAddress;
@@ -88,11 +88,11 @@ public class HotelModel {
 		this.hotelFaxNum = hotelFaxNum;
 	}
 
-	public String getIsActive() {
+	public boolean getIsActive() {
 		return isActive;
 	}
 
-	public void setIsActive(String isActive) {
+	public void setIsActive(boolean isActive) {
 		this.isActive = isActive;
 	}
 	
