@@ -14,7 +14,7 @@ public interface RosterDAO {
 	public boolean removeJobTitle(int jobid);
 	public boolean setJobTitleActiveStatus(int jobid, boolean state);
 	public boolean updateJobTitle(int jobid, String title);
-	public ArrayList<JobTitleModel> getJobTitles();
+	public ArrayList<JobTitleModel> getAllJobTitles();
 	public JobTitleModel getJobTitleById(int jobid);
 	
 	public EmployeeModel addEmployee(String firstN, String lastN, String email, String userid, String pwd, int hotelid, int jobid);
@@ -29,7 +29,7 @@ public interface RosterDAO {
 	public boolean setEmployeeDirActiveStatus(int empdirid, boolean state);
 	public boolean updateEmployeeDir(int empdirid, int hotelid, int empid, int jobid);
 	public ArrayList<EmployeeDirModel> getAllEmployeeDirs();
-	public EmployeeModel getEmployeeDirById(int empdirid);
+	public EmployeeDirModel getEmployeeDirById(int empdirid);
 	
 	public HotelModel addHotel(String hname, String haddr, String hcity, String hcntry, String hphone, String hfax);
 	public boolean removeHotel(int hotelid);
@@ -41,6 +41,7 @@ public interface RosterDAO {
 	public WorkScheduleModel addNextWorkSchedule(int hotelid, Date startD, Date endD);
 	public boolean deleteAWorkSchedule(int ws_id);
 	public boolean updateCurWorkSchedule(int ws_id, int hotelid, Date startD, Date endD);
+	public ArrayList<WorkScheduleModel> getAllSchedules();
 	public ArrayList<WorkScheduleModel> getSchedulesByDate(Date startD, Date endD);
 	public WorkScheduleModel getScheduleByID(int ws_id);
 	
