@@ -3,7 +3,7 @@
  */
 package com.thedawson.util.model;
 
-import java.util.Calendar;
+import java.sql.Date;
 
 /**
  * Model class to store Work Schedule information from database.
@@ -12,12 +12,12 @@ import java.util.Calendar;
 public class WorkScheduleModel {
 	private int workScheduleId;
 	private int hotelId;
-	private Calendar startDate;
-	private Calendar endDate;
+	private Date startDate;
+	private Date endDate;
 	
 	//Constructor
-	public WorkScheduleModel(int workScheduleId, int hotelId, Calendar startDate,
-			Calendar endDate) {
+	public WorkScheduleModel(int workScheduleId, int hotelId, Date startDate,
+			Date endDate) {
 		this.workScheduleId = workScheduleId;
 		this.hotelId = hotelId;
 		this.startDate = startDate;
@@ -41,19 +41,19 @@ public class WorkScheduleModel {
 		this.hotelId = hotelId;
 	}
 
-	public Calendar getStartDate() {
+	public Date getStartDate() {
 		return startDate;
 	}
 
-	public void setStartDate(Calendar startDate) {
+	public void setStartDate(Date startDate) {
 		this.startDate = startDate;
 	}
 
-	public Calendar getEndDate() {
+	public Date getEndDate() {
 		return endDate;
 	}
 
-	public void setEndDate(Calendar endDate) {
+	public void setEndDate(Date endDate) {
 		this.endDate = endDate;
 	}
 }

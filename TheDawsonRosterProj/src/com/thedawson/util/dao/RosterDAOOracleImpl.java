@@ -1,34 +1,1990 @@
 package com.thedawson.util.dao;
 
-//import java.sql.Connection;
-//import java.sql.ResultSet;
-//import java.sql.Statement;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-
-import javax.sql.rowset.CachedRowSet;
+import java.util.Iterator;
 
 import com.thedawson.util.model.EmployeeDirModel;
-//import oracle.jdbc.pool.OracleDataSource;
-//import org.apache.commons.dbutils.DbUtils;
 import com.thedawson.util.model.EmployeeModel;
 import com.thedawson.util.model.HotelModel;
 import com.thedawson.util.model.JobTitleModel;
 import com.thedawson.util.model.WorkDayModel;
 import com.thedawson.util.model.WorkScheduleModel;
 
-public class RosterDAOOracleImpl implements RosterDAO {
+public class RosterDAOOracleImpl extends BaseDAO {
 	
-	//The DB object used to connect to DB and run queries
-	private DBManager dbm = DBManager.getInstance();
+	private ResultSet rs = null;
+	
+	/* Adds a job title row to the database
+	 * @param title The title of the new job position
+	 * @return the new job title database details wrapped in a model object
+	 */
+	public JobTitleModel addJobTitle(String title) {
+		
+		//Ensure the title is not null value first, then proceed
+		if(title == null) {
+			return null;
+		}
+		
+		JobTitleModel jtm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "INSERT INTO jobtitle VALUES (null, (?), (?))";
+		String[] akgCols = {"job_id"};
+		
+		int jobGk = -1;
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps.setString(1, title);
+			ps.setString(2, "Y");
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+
+			//Retrieve the auto generated key from the database
+			rs = ps.getGeneratedKeys();
+			
+			if(rs.next()) {
+				jobGk = rs.getInt(1);
+			}
+			
+			//If no auto gen keys were returned then there's a problem
+			if(jobGk == -1) {
+				throw new SQLException ("Query failed to retrieve generated keys when expected");
+			}
+		
+			System.out.println("Job Title Gen Key: " + jobGk);
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			//Create Job Title Model object for return
+			jtm = new JobTitleModel(jobGk, title, true);
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			jtm = null;
+		}
+		finally {
+			rs = null;
+			this.closeConnection();
+		}
+		
+		return jtm;
+	}
+	
+	/* Deletes a job title from the database
+	 * @param the job title database id to remove
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
+	 */
+	public boolean removeJobTitle(int jobid) {
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String sql = "DELETE FROM jobtitle WHERE job_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, jobid);
+			int rowsUpdated = ps.executeUpdate();
+
+			System.out.println(ps);
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+		
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+	
+	
+	/* Changes the Active status of the job title
+	 * @param state true for activate, false for make inactive
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
+	 */
+	public boolean setJobTitleActiveStatus(int jobid, boolean state) {
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String status = null;
+		
+		if(state) {
+			status = "Y";
+		}
+		else {
+			status = "N";
+		}
+		
+		String sql = "UPDATE jobtitle SET is_active = (?) WHERE job_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = getConnection().setSavepoint("Savepoint"); 
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setString(1, status);
+			ps.setInt(2, jobid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+		
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+	/* Updates the job title from the database
+	 * @param the job title database id to update and the title value to update the row with
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
+	 */
+	public boolean updateJobTitle(int jobid, String title) {	
+		
+		//Ensure the title is not null value first, then proceed
+		if(title == null) {
+			return false;
+		}
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String sql = "UPDATE jobtitle SET job_title = (?) WHERE job_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setString(1, title);
+			ps.setInt(2, jobid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+		
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+
+	/* Retrieve all the job titles in the jobtitle table in the database
+	 * @return the arraylist of all the job title rows in the database in model objects
+	 */
+	public ArrayList<JobTitleModel> getAllJobTitles() {
+		ArrayList<JobTitleModel> jtmList = new ArrayList<JobTitleModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM jobtitle";
+		
+		System.out.println(sql);
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			rs = ps.executeQuery();
+			
+			while (rs.next()) {
+
+				int jobId = rs.getInt("job_id");
+				String jobTitle = rs.getString("job_title");
+				String isActive = rs.getString("is_active");
+
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				jtmList.add(new JobTitleModel(jobId, jobTitle, isActiveBool));
+			}
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			jtmList = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return jtmList;
+	}
+
+
+
+	/* Retrieves a particular job title from the jobtitle table in the database based on job id
+	 * @see com.thedawson.util.dao.RosterDAO#getJobTitleById(int)
+	 * @param jobid the job id you want to retrieve from the database.
+	 * @return a job title database result in model form with the associated jobid
+	 */
+	public JobTitleModel getJobTitleById(int jobid) {
+		JobTitleModel jtm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM jobtitle where job_id = (?)";
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, jobid);
+			
+			System.out.println(ps);
+			
+			rs = ps.executeQuery();
+			
+			//If rs is not empty then a row exists with provided jobid, create job title model object
+			//Otherwise return null job title model below
+			if(rs.next()) {
+				int jobId = rs.getInt("job_id");
+				String jobTitle = rs.getString("job_title");
+				String isActive = rs.getString("is_active");
+
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				jtm = new JobTitleModel(jobId, jobTitle, isActiveBool);
+			}
+					
+		} catch (SQLException se) {
+			se.printStackTrace();
+			jtm = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return jtm;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#addEmployee(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)
+	 */
+	public EmployeeModel addEmployee(String firstN, String lastN, String email,
+			String userid, String pwd, int hotelid, int jobid) {
+				
+				//Ensure all of the String parameters are not null first, then proceed
+				if(firstN == null || lastN == null || email == null || userid == null || pwd == null) {
+					return null;
+				}
+				
+				EmployeeModel em = null;
+				Savepoint sp = null;
+				int empGk = -1;
+				int empdirGk = -1;
+
+				try {
+					
+					//Create a transaction
+					this.getConnection().setAutoCommit(false);
+					sp = this.getConnection().setSavepoint("Savepoint");
+					
+					//Execute query to insert into employee table
+					String sql = "INSERT INTO employee VALUES (null, (?), (?), (?), (?), (?), (?))"; 
+					String[] akgCols = {"e_id"};
+
+					PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+					ps.setString(1, firstN);
+					ps.setString(2, lastN);
+					ps.setString(3, email);
+					ps.setString(4, userid);
+					ps.setString(5, pwd);
+					ps.setString(6, "Y");
+					
+					System.out.println(ps);
+					
+					int rowsUpdated = ps.executeUpdate(sql, akgCols);
+					
+					//Check to see if the query failed to updated the database
+					if(rowsUpdated == 0) {
+						throw new SQLException ("Query failed to update any rows");
+					}
+
+					//Retrieve the auto generated key from the database
+					rs = ps.getGeneratedKeys();
+					
+					if(rs.next()) {
+						empGk = rs.getInt(1);
+					}
+
+					System.out.println("Generated Key Employee: " + empGk);
+					
+					//If no auto gen keys were returned then there's a problem
+					if(empGk == -1) {
+						throw new SQLException ("Query failed to retrieve generated keys when expected");
+					}
+
+					//No error, so continue processing
+					//Execute query to insert into employee directory table
+					String sql2 = "INSERT INTO employeedir VALUES (null, (?), (?), (?), (?))";
+					String[] akgCols2 = {"empldir_id"};
+					
+					ps = this.getConnection().prepareStatement(sql2, akgCols2);
+					ps.setInt(1, hotelid);
+					ps.setInt(2, empGk);
+					ps.setInt(3, jobid);
+					ps.setString(4, "Y");
+
+					System.out.println(ps);
+
+					int rowsUpdated2 = ps.executeUpdate(sql, akgCols);
+					
+					//Check to see if the query failed to updated the database
+					if(rowsUpdated2 == 0) {
+						throw new SQLException ("Query failed to update any rows");
+					}
+
+					//Retrieve the auto generated key from the database
+					rs = ps.getGeneratedKeys();
+					
+					if(rs.next()) {
+						empdirGk = rs.getInt(1);
+					}
+					
+					//If no auto gen keys were returned then there's a problem
+					if(empdirGk == -1) {
+						throw new SQLException ("Query failed to retrieve generated keys when expected");
+					}
+
+
+					System.out.println("Generated Key Employee Dir: " + empdirGk);
+					
+					//Create the employee object model for return
+					em = new EmployeeModel(empGk, firstN, lastN, email, userid, pwd, true);
+					
+					//End Transaction
+					this.getConnection().commit();
+					this.getConnection().setAutoCommit(true);
+					
+				} catch (SQLException se) {
+					se.printStackTrace();
+					try { this.getConnection().rollback(sp); } catch (SQLException se2) { se2.printStackTrace(); }
+					em = null;
+				}
+				finally {
+					rs = null;
+					this.closeConnection();
+				}
+				
+				return em;
+	}
+
+	
+	
+	/* Deletes an employee from the database
+	 * @see com.thedawson.util.dao.RosterDAO#removeEmployee(int)
+	 * @param the employee database id to remove
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
+	 */
+	public boolean removeEmployee(int empid) {
+		
+		boolean returnStatus = true;
+		
+		//Create SQL Query and execute it
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			
+			//Delete from Employee Directory first since there are constraints, cannot delete Employee first
+			String sql = "DELETE FROM employeedir WHERE emp_id = (?)";
+			
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, empid);
+			
+			int rowsUpdated = ps.executeUpdate();
+			
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			System.out.println(ps);
+					
+			String sql2 = "DELETE FROM employee WHERE e_id = " + empid;
+			
+			ps = this.getConnection().prepareStatement(sql2);
+			ps.setInt(1, empid);
+			
+			int rowsUpdated2 = ps.executeUpdate();
+			
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated2 == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			System.out.println(ps);
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch (SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+	
+	
+	
+	/* Changes the Active status of the employee
+	 * @param state true for activate, false for make inactive
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
+	 */
+	public boolean setEmployeeActiveStatus(int empid, boolean state) {
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String status = null;
+		
+		if(state) {
+			status = "Y";
+		}
+		else {
+			status = "N";
+		}
+		
+		String sql = "UPDATE employee SET is_active = (?) WHERE e_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = getConnection().setSavepoint("Savepoint"); 
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setString(1, status);
+			ps.setInt(2, empid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+		
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#updateEmployee(int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)
+	 */
+	public boolean updateEmployee(int empid, String firstN, String lastN,
+			String email, String userid, String pwd, int hotelid, int jobid) {
+		
+		//Ensure all String parameters are not null first, then proceed
+		if(firstN == null || lastN == null || email == null || userid == null || pwd == null) {
+			return false;
+		}
+		
+		boolean returnStatus = false;
+
+		//Create SQL Query and execute it
+		String sql = "UPDATE employee SET first_name = (?), "
+				+ "last_name = (?), "
+				+ "email = (?), "
+				+ "username = (?), "
+				+ "encr_pwd = (?) "
+				+ "WHERE e_id = (?)";
+
+		Savepoint sp = null;
+
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setString(1, firstN);
+			ps.setString(2, lastN);
+			ps.setString(3, email);
+			ps.setString(4, userid);
+			ps.setString(5, pwd);
+			ps.setInt(6, empid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+
+			returnStatus = true;
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+
+		return returnStatus;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getAllEmployees()
+	 */
+	public ArrayList<EmployeeModel> getAllEmployees() {
+		
+		ArrayList<EmployeeModel> emList = new ArrayList<EmployeeModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM employee";
+
+		System.out.println(sql);
+
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			rs = ps.executeQuery();
+
+			while (rs.next()) {
+
+				int empId = rs.getInt("e_id");
+				String firstN = rs.getString("first_name");
+				String lastN = rs.getString("last_name");
+				String email = rs.getString("email");
+				String userid = rs.getString("username");
+				String pwd = rs.getString("encr_pwd");
+				String isActive = rs.getString("is_active");
+
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				emList.add(new EmployeeModel(empId, firstN, lastN, email, userid, pwd, isActiveBool));
+			}
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			emList = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return emList;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getEmployeeById(int)
+	 */
+	public EmployeeModel getEmployeeById(int empid) {
+		EmployeeModel em = null;
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM employee where e_id = (?)";
+		
+		System.out.println(sql);
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, empid);
+			
+			System.out.println(ps);
+			
+			rs = ps.executeQuery();
+			
+			//If rs is not empty then a row exists with provided empid, create employee model object
+			//Otherwise return null employee model below
+			if(rs.next()) {
+				int empId = rs.getInt("e_id");
+				String firstN = rs.getString("first_name");
+				String lastN = rs.getString("last_name");
+				String email = rs.getString("email");
+				String userid = rs.getString("username");
+				String pwd = rs.getString("encr_pwd");
+				String isActive = rs.getString("is_active");
+
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				em = new EmployeeModel(empId, firstN, lastN, email, userid, pwd, isActiveBool);
+			}
+					
+		} catch (SQLException se) {
+			se.printStackTrace();
+			em = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return em;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#addEmployeeDir(int, int, int)
+	 */
+	public EmployeeDirModel addEmployeeDir(int hotelid, int empid, int jobid) {
+		
+		EmployeeDirModel edm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "INSERT INTO employeedir VALUES (null, (?), (?), (?), (?))";
+		String[] akgCols = {"empldir_id"};
+		
+		System.out.println(sql);
+
+		int edGk = -1;
+		Savepoint sp = null;
+
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps.setInt(1, hotelid);
+			ps.setInt(2, empid);
+			ps.setInt(3, jobid);
+			ps.setString(4, "Y");
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+
+			//Retrieve the auto generated key from the database
+			rs = ps.getGeneratedKeys();
+
+			if(rs.next()) {
+				edGk = rs.getInt(1);
+			}
+
+			//If no auto gen keys were returned then there's a problem
+			if(edGk == -1) {
+				throw new SQLException ("Query failed to retrieve generated keys when expected");
+			}
+
+			System.out.println("Job Title Gen Key: " + edGk);
+
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+
+			//Create Emp Dir Model object for return
+			edm = new EmployeeDirModel(edGk, hotelid, empid, jobid, true);
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			edm = null;
+		}
+		finally {
+			rs = null;
+			this.closeConnection();
+		}
+
+		return edm;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#removeEmployeeDir(int)
+	 */
+	public boolean removeEmployeeDir(int empdirid) {
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String sql = "DELETE FROM employeedir WHERE empldir_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, empdirid);
+			int rowsUpdated = ps.executeUpdate();
+
+			System.out.println(ps);
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+		
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#setEmployeeDirActiveStatus(int, boolean)
+	 */
+	public boolean setEmployeeDirActiveStatus(int empdirid, boolean state) {
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String status = null;
+		
+		if(state) {
+			status = "Y";
+		}
+		else {
+			status = "N";
+		}
+			
+		
+		String sql = "UPDATE employeedir SET is_active = (?) WHERE empldir_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = getConnection().setSavepoint("Savepoint"); 
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setString(1, status);
+			ps.setInt(2, empdirid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+		
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;	
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#updateEmployeeDir(int, int, int, int)
+	 */
+	public boolean updateEmployeeDir(int empdirid, int hotelid, int empid,
+			int jobid) {
+
+		boolean returnStatus = false;
+
+		//Create SQL Query and execute it
+		String sql = "UPDATE employeedir SET hotel_id = (?), "
+				+ "emp_id = (?) "
+				+ "WHERE empldir_id = (?)";
+
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, hotelid);
+			ps.setInt(2, empid);
+			ps.setInt(3, empdirid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+		
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getAllEmployeeDirs()
+	 */
+	public ArrayList<EmployeeDirModel> getAllEmployeeDirs() {
+		ArrayList<EmployeeDirModel> edList = new ArrayList<EmployeeDirModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM employeedir";
+		
+		System.out.println(sql);
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			rs = ps.executeQuery();
+			
+			while (rs.next()) {
+
+				int empdirId = rs.getInt("empldir_id");
+				int hotelId = rs.getInt("hotel_id");
+				int empId = rs.getInt("emp_id");
+				int jobId = rs.getInt("job_id");
+				String isActive = rs.getString("is_active");
+
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				edList.add(new EmployeeDirModel(empdirId, hotelId, empId, jobId, isActiveBool));
+			}
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			edList = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return edList;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getEmployeeDirById(int)
+	 */
+	public EmployeeDirModel getEmployeeDirById(int empdirid) {
+		EmployeeDirModel edm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM employeedir where empldir_id = (?)";
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, empdirid);
+			
+			System.out.println(ps);
+			
+			rs = ps.executeQuery();
+			
+			//If rs is not empty then a row exists with provided empdirid, create emp dir model object
+			//Otherwise return null emp dir model below
+			if(rs.next()) {
+				int empdirId = rs.getInt("empldir_id");
+				int hotelId = rs.getInt("hotel_id");
+				int empId = rs.getInt("emp_id");
+				int jobId = rs.getInt("job_id");
+				String isActive = rs.getString("is_active");
+
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				edm = new EmployeeDirModel(empdirId, hotelId, empId, jobId, isActiveBool);
+			}
+					
+		} catch (SQLException se) {
+			se.printStackTrace();
+			edm = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return edm;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#addHotel(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
+	public HotelModel addHotel(String hname, String haddr, String hcity,
+			String hcntry, String hphone, String hfax) {
+		
+		//Ensure none of the String parameters are null first, then proceed
+		if(hname == null || haddr == null || hcity == null || hcntry == null || hphone == null || hfax == null) {
+			return null;
+		}
+
+		HotelModel hm = null;
+
+		//Create SQL Query and execute it
+		String sql = "INSERT INTO hotel VALUES (null, (?), (?), (?), (?), (?), (?), (?))";
+		String[] akgCols = {"h_id"};
+
+		int hGk = -1;
+		Savepoint sp = null;
+
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps.setString(1, hname);
+			ps.setString(2, haddr);
+			ps.setString(3, hcity);
+			ps.setString(4, hcntry);
+			ps.setString(5, hphone);
+			ps.setString(6, hfax);
+			ps.setString(7, "Y");
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+
+			//Retrieve the auto generated key from the database
+			rs = ps.getGeneratedKeys();
+
+			if(rs.next()) {
+				hGk = rs.getInt(1);
+			}
+
+			//If no auto gen keys were returned then there's a problem
+			if(hGk == -1) {
+				throw new SQLException ("Query failed to retrieve generated keys when expected");
+			}
+
+			System.out.println("Job Title Gen Key: " + hGk);
+
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+
+			//Create Hotel Model object for return
+			hm = new HotelModel(hGk, hname, haddr, hcity, hcntry, hphone, hfax, true);
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			hm = null;
+		}
+		finally {
+			rs = null;
+			this.closeConnection();
+		}
+
+		return hm;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#removeHotel(int)
+	 */
+	public boolean removeHotel(int hotelid) {
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String sql = "DELETE FROM hotel WHERE h_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, hotelid);
+			int rowsUpdated = ps.executeUpdate();
+
+			System.out.println(ps);
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+		
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+	/* Changes the Active status of the job title
+	 * @param state true for activate, false for make inactive
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
+	 */
+	public boolean setHotelActiveStatus(int hotelid, boolean state) {
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String status = null;
+		
+		if(state) {
+			status = "Y";
+		}
+		else {
+			status = "N";
+		}
+			
+		
+		String sql = "UPDATE hotel SET is_active = (?) WHERE h_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = getConnection().setSavepoint("Savepoint"); 
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setString(1, status);
+			ps.setInt(2, hotelid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+		
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#updateHotel(int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
+	public boolean updateHotel(int hotelid, String hname, String haddr,
+			String hcity, String hcntry, String hphone, String hfax) {
+		
+		//Ensure the String parameters are not null first, then proceed
+		if(hname == null || haddr == null || hcity == null || hcntry == null || hphone == null || hfax == null) {
+			return false;
+		}
+
+		boolean returnStatus = false;
+
+		//Create SQL Query and execute it
+		String sql = "UPDATE hotel SET h_name = (?), "
+				+ "h_addr = (?), "
+				+ "h_city = (?), "
+				+ "h_country = (?), "
+				+ "h_tel = (?), "
+				+ "h_fax = (?) "
+				+ "WHERE h_id = (?)";
+		
+
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setString(1, hname);
+			ps.setString(2, haddr);
+			ps.setString(3, hcity);
+			ps.setString(4, hcntry);
+			ps.setString(5, hphone);
+			ps.setString(6, hfax);
+			ps.setInt(7, hotelid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+		
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getAllHotels()
+	 */
+	public ArrayList<HotelModel> getAllHotels() {
+		ArrayList<HotelModel> hList = new ArrayList<HotelModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM hotel";
+		
+		System.out.println(sql);
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			rs = ps.executeQuery();
+			
+			while (rs.next()) {
+
+				int hotelId = rs.getInt("h_id");
+				String hName = rs.getString("h_name");
+				String hAddr = rs.getString("h_addr");
+				String hCity = rs.getString("h_city");
+				String hCntry = rs.getString("h_country");
+				String hTel = rs.getString("h_tel");
+				String hFax = rs.getString("h_fax");
+				String isActive = rs.getString("is_active");
+
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				hList.add(new HotelModel(hotelId, hName, hAddr, hCity, hCntry, hTel, hFax, isActiveBool));
+			}
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			hList = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return hList;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getHotelById(int)
+	 */
+	public HotelModel getHotelById(int hotelid) {
+		
+		HotelModel hm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM hotel where h_id = (?)";
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, hotelid);
+			
+			System.out.println(ps);
+			
+			rs = ps.executeQuery();
+			
+			//If rs is not empty then a row exists with provided hotelid, create hotel model object
+			//Otherwise return null hotel model below
+			if(rs.next()) {
+				int hotelId = rs.getInt("h_id");
+				String hName = rs.getString("h_name");
+				String hAddr = rs.getString("h_addr");
+				String hCity = rs.getString("h_city");
+				String hCntry = rs.getString("h_country");
+				String hTel = rs.getString("h_tel");
+				String hFax = rs.getString("h_fax");
+				String isActive = rs.getString("is_active");
+
+				boolean isActiveBool = true;
+				if(isActive.toUpperCase().equals("N")) {
+					isActiveBool = false;
+				}
+
+				hm = new HotelModel(hotelId, hName, hAddr, hCity, hCntry, hTel, hFax, isActiveBool);
+			}
+					
+		} catch (SQLException se) {
+			se.printStackTrace();
+			hm = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return hm;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#addNextWorkSchedule(int, java.util.Date, java.util.Date)
+	 */
+	public WorkScheduleModel addNextWorkSchedule(int hotelid, Date startD,
+			Date endD) {
+		
+		//Ensure the Dates are not null value first, then proceed
+		if(startD == null || endD == null) {
+			return null;
+		}
+
+		WorkScheduleModel wsm = null;
+		
+		//Create SQL Query and execute it
+		String sql = "INSERT INTO workschedule VALUES (null, (?), (?), (?))";
+		String[] akgCols = {"wksched_id"};
+
+		int wsGk = -1;
+		Savepoint sp = null;
+
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps.setInt(1, hotelid);
+			ps.setDate(2, startD);
+			ps.setDate(3, endD);
+			
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+
+			//Retrieve the auto generated key from the database
+			rs = ps.getGeneratedKeys();
+
+			if(rs.next()) {
+				wsGk = rs.getInt(1);
+			}
+
+			//If no auto gen keys were returned then there's a problem
+			if(wsGk == -1) {
+				throw new SQLException ("Query failed to retrieve generated keys when expected");
+			}
+
+			System.out.println("Job Title Gen Key: " + wsGk);
+
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+
+			//Create Hotel Model object for return
+			wsm = new WorkScheduleModel(wsGk, hotelid, startD, endD);
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			wsm = null;
+		}
+		finally {
+			rs = null;
+			this.closeConnection();
+		}
+
+		return wsm;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#deleteAWorkSchedule(int)
+	 */
+	public boolean deleteAWorkSchedule(int wsid) {
+		
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String sql = "DELETE FROM workschedule WHERE wksched_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, wsid);
+			int rowsUpdated = ps.executeUpdate();
+
+			System.out.println(ps);
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+		
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#updateCurWorkSchedule(int, int, java.util.Date, java.util.Date)
+	 */
+	public boolean updateCurWorkSchedule(int wsid, int hotelid, Date startD,
+			Date endD) {
+		
+		//Ensure the title is not null value first, then proceed
+		if(startD == null || endD == null) {
+			return false;
+		}
+		
+		boolean returnStatus = false;
+		
+		String sql = "UPDATE workschedule SET hotel_id = (?), "
+				+ "start_date = (?), " 
+				+ "end_date = (?) " 
+				+ "WHERE wksched_id = (?)"; 
+
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, hotelid);
+			ps.setDate(2, startD);
+			ps.setDate(3, endD);
+			ps.setInt(4, wsid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+		
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getAllSchedules()
+	 */
+	public ArrayList<WorkScheduleModel> getAllSchedules() {
+		ArrayList<WorkScheduleModel> wsList = new ArrayList<WorkScheduleModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM workschedule";
+		
+		System.out.println(sql);
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			rs = ps.executeQuery();
+			
+			while (rs.next()) {
+
+				int wkschedId = rs.getInt("wksched_id");
+				int hotelId = rs.getInt("hotel_id");
+				Date startD = rs.getDate("start_date");
+				Date endD = rs.getDate("end_date");
+
+				wsList.add(new WorkScheduleModel(wkschedId, hotelId, startD, endD));
+			}
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			wsList = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return wsList;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getSchedulesByDate(java.util.Date, java.util.Date)
+	 */
+	public ArrayList<WorkScheduleModel> getSchedulesByDate(Date startD,
+			Date endD) {
+		
+		//Check if the start date is after the end date
+		//if so then invalid and return null
+		if(startD.compareTo(endD) > 0) {
+			return null;
+		}
+		
+		//The dates are correct and in order so run query
+		ArrayList<WorkScheduleModel> wsList = new ArrayList<WorkScheduleModel>();
+		
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM workschedule WHERE (start_date >= (?) AND end_date <= (?)) " 
+						+ "OR (start_date < (?) AND end_date > (?)) "
+						+ "OR (start date < (?) AND end_date > (?)))";
+		
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setDate(1, startD);
+			ps.setDate(2, endD);
+			ps.setDate(3, startD);
+			ps.setDate(4, startD);
+			ps.setDate(5, endD);
+			ps.setDate(6, endD);
+			rs = ps.executeQuery();
+			
+			System.out.println(ps);
+			
+			while (rs.next()) {
+
+				int wkschedId = rs.getInt("wksched_id");
+				int hotelId = rs.getInt("hotel_id");
+				Date startDate = rs.getDate("start_date");
+				Date endDate = rs.getDate("end_date");
+
+				wsList.add(new WorkScheduleModel(wkschedId, hotelId, startDate, endDate));
+			}
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			wsList = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+		
+		return wsList;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getScheduleByID(int)
+	 */
+	public WorkScheduleModel getScheduleByID(int wsid) {
+		
+		WorkScheduleModel wsm = null;
+
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM workschedule WHERE wksched_id = (?)";
+
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, wsid);
+			
+			System.out.println(ps);
+			
+			rs = ps.executeQuery();
+			
+			//If rs is not empty then a row exists with provided wsid, create work schedule model object
+			//Otherwise return null work schedule model below
+			if(rs.next()) {
+				int wkschedId = rs.getInt("wksched_id");
+				int hotelId = rs.getInt("hotel_id");
+				Date startD = rs.getDate("start_date");
+				Date endD = rs.getDate("end_date");
+
+				wsm = new WorkScheduleModel(wkschedId, hotelId, startD, endD);
+			}
+					
+		} catch (SQLException se) {
+			se.printStackTrace();
+			wsm = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+
+		return wsm;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#addWorkDay(int, int, int, java.util.Date, double)
+	 */
+	public WorkDayModel addWorkDay(int wkschedid, int empid, int jobid,
+			Date shiftDate, double shiftLen) {
+
+		//Ensure the Date is not null first, then proceed
+		if(shiftDate == null) {
+			return null;
+		}
+
+		WorkDayModel wdm = null;
+
+		//Create SQL Query and execute it
+		String sql = "INSERT INTO workday VALUES (null, (?), (?), (?), (?), (?))";
+		String[] akgCols = {"wksched_id"};
+
+		int wdGk = -1;
+		Savepoint sp = null;
+
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps.setInt(1, wkschedid);
+			ps.setInt(2, empid);
+			ps.setInt(3, jobid);
+			ps.setDate(4, shiftDate);
+			ps.setDouble(5, shiftLen);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+
+			//Retrieve the auto generated key from the database
+			rs = ps.getGeneratedKeys();
+
+			if(rs.next()) {
+				wdGk = rs.getInt(1);
+			}
+
+			//If no auto gen keys were returned then there's a problem
+			if(wdGk == -1) {
+				throw new SQLException ("Query failed to retrieve generated keys when expected");
+			}
+
+			System.out.println("Job Title Gen Key: " + wdGk);
+
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+
+			//Create Work Day Model object for return
+			wdm = new WorkDayModel(wdGk, wkschedid, empid, jobid, shiftDate, shiftLen);
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			wdm = null;
+		}
+		finally {
+			rs = null;
+			this.closeConnection();
+		}
+
+		return wdm;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#deleteAWorkDay(int)
+	 */
+	public boolean deleteAWorkDay(int wdid) {
+
+		boolean returnStatus = false;
+		
+		//Create SQL Query and execute it
+		String sql = "DELETE FROM workday WHERE wksched_id = (?)";
+		
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, wdid);
+			int rowsUpdated = ps.executeUpdate();
+
+			System.out.println(ps);
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+		
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+		
+		return returnStatus;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#updateAWorkDay(int, int, int, int, java.util.Date, double)
+	 */
+	public boolean updateAWorkDay(int wdid, int wkschedid, int empid,
+			int jobid, Date shiftDate, double shiftLen) {
+		
+		//Ensure the shiftDate is not null value first, then proceed
+		if(shiftDate == null) {
+			return false;
+		}
+
+		boolean returnStatus = false;
+
+		String sql = "UPDATE workday SET wksched_id = (?), "
+				+ "emp_id = (?), " 
+				+ "job_id = (?), " 
+				+ "shift_date = (?), "
+				+ "shift_len = (?) "
+				+ "WHERE wkday_id = (?)"; 
+
+		Savepoint sp = null;
+
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, wkschedid);
+			ps.setInt(2, empid);
+			ps.setInt(3, jobid);
+			ps.setDate(4, shiftDate);
+			ps.setDouble(5, shiftLen);
+			ps.setInt(6, wdid);
+
+			System.out.println(ps);
+
+			int rowsUpdated = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+
+			returnStatus = true;
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection();
+		}
+
+		return returnStatus;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getWorkDaysByDate(java.util.Date, java.util.Date)
+	 */
+	public ArrayList<WorkDayModel> getWorkDaysByDate(Date startD, Date endD) {
+		
+		//Check if the start date is after the end date
+		//if so then invalid and return null
+		if(startD.compareTo(endD) > 0) {
+			return null;
+		}
+
+		//The dates are correct and in order so run query
+		ArrayList<WorkDayModel> wdList = new ArrayList<WorkDayModel>();
+
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM workday WHERE shift_date >= (?) AND shift_date <= (?)";
+
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps.setDate(1, startD);
+			ps.setDate(2, endD);
+			
+			rs = ps.executeQuery();
+
+			System.out.println(ps);
+
+			while (rs.next()) {
+				int wdId = rs.getInt("wkday_id");
+				int wkschedId = rs.getInt("wksched_id");
+				int empId = rs.getInt("emp_id");
+				int jobId = rs.getInt("job_id");
+				Date shiftDate = rs.getDate("shift_date");
+				double shiftLen = rs.getDouble("shift_len");
+				
+				wdList.add(new WorkDayModel(wdId, wkschedId, empId, jobId, shiftDate, shiftLen));
+			}
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			wdList = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+
+		return wdList;
+	}
+
+
+
+	/* (non-Javadoc)
+	 * @see com.thedawson.util.dao.RosterDAO#getWorkDaysBySchedIDs(java.util.ArrayList)
+	 */
+	public ArrayList<WorkDayModel> getWorkDaysBySchedIDs(ArrayList<Integer> schedids) {
+		
+		ArrayList<WorkDayModel> wdmList = new ArrayList<WorkDayModel>();
+
+		//Create SQL Query and execute it
+		String sql = "SELECT * FROM workday WHERE wksched_id = (?)";
+
+		try {
+			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			
+			//Iterate through all the schedule ids in the arraylist and retrieve all the workday results associated
+			Iterator<Integer> schedIter = schedids.iterator();
+			while(schedIter.hasNext()) {
+				Integer curSchedId = schedIter.next();
+				
+				ps.setInt(1, curSchedId.intValue());
+
+				System.out.println(ps);
+
+				rs = ps.executeQuery();
+
+				//If rs is not empty then at last one row exists with provided schedid, create workday model object and add to list
+				//Otherwise return null work day model list below
+				while(rs.next()) {
+					int wdId = rs.getInt("wkday_id");
+					int wkschedId = rs.getInt("wksched_id");
+					int empId = rs.getInt("emp_id");
+					int jobId = rs.getInt("job_id");
+					Date shiftDate = rs.getDate("shift_date");
+					double shiftLen = rs.getDouble("shift_len");
+
+					wdmList.add(new WorkDayModel(wdId, wkschedId, empId, jobId, shiftDate, shiftLen));
+				}
+			}
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+			wdmList = null;
+		}
+		finally {
+			this.closeConnection();
+			rs = null;
+		}
+
+		return wdmList;
+	}
 	
 	/**
 	 * Method to test connection to the database.  Not used in actual application.
 	 */
 	/*
-	@Override
+	
 	public void connect() {
 		
 		Connection conn = null;
@@ -67,1041 +2023,4 @@ public class RosterDAOOracleImpl implements RosterDAO {
 		}
 	}
 	*/
-	
-	/* Adds a job title row to the database
-	 * @see com.thedawson.util.dao.RosterDAO#addJobTitle(java.lang.String)
-	 * @param title The title of the new job position
-	 * @return the new job title database details wrapped in a model object
-	 */
-	@Override
-	public JobTitleModel addJobTitle(String title) {
-		
-		//Ensure the title is not null value first, then proceed
-		if(title == null) {
-			return null;
-		}
-		
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		ArrayList<Integer> genKeysList = null;
-		JobTitleModel jtm = null;
-
-		//Create SQL Query and execute it
-		String sql = "INSERT INTO jobtitle VALUES (null, '" + title + "', 'Y')";
-		String[] akgCols = {"job_id"};
-		sqlsWithAkgCols.put(sql, akgCols);
-
-		System.out.println(sql);
-
-		//Retrieve the auto generated key from the database
-		genKeysList = dbm.executeQueryUpdateAuto(sqlsWithAkgCols);
-		
-		//If there was a SQL Error in executeQueryUpdateAuto then genKeyList will be null
-		if(genKeysList == null) {
-			return jtm;
-		}
-		
-		//No error, so process genKeyList
-		Integer jtGenKey = genKeysList.get(0);
-		int jobGk = jtGenKey.intValue();
-		
-		//Create the job title object model for return
-		System.out.println("Generated Key Job Title: " + jobGk);
-		jtm = new JobTitleModel(jobGk, title, true);
-		
-		return jtm;
-	}
-
-
-
-	/* Deletes a job title from the database
-	 * @see com.thedawson.util.dao.RosterDAO#removeJobTitle(int)
-	 * @param the job title database id to remove
-	 * @return boolean determine if the update ran successfully or was rolled back and failed
-	 */
-	@Override
-	public boolean removeJobTitle(int jobid) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		String sql = "DELETE FROM jobtitle WHERE job_id = " + jobid;
-		sqlsWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Execute the db removal
-		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;
-	}
-
-	
-	
-	/* Changes the Active status of the job title
-	 * @param state true for activate, false for make inactive
-	 * @return boolean determine if the update ran successfully or was rolled back and failed
-	 */
-	@Override
-	public boolean setJobTitleActiveStatus(int jobid, boolean state) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		String status = null;
-		
-		if(state) {
-			status = "Y";
-		}
-		else {
-			status = "N";
-		}
-			
-		
-		String sql = "UPDATE jobtitle SET is_active = '" + status + "' WHERE job_id = " + jobid;
-		sqlsWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Execute the db removal
-		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;
-	}
-
-
-	/* Updates the job title from the database
-	 * @see com.thedawson.util.dao.RosterDAO#updateJobTitle(int, java.lang.String)
-	 * @param the job title database id to update and the title value to update the row with
-	 * @return boolean determine if the update ran successfully or was rolled back and failed
-	 */
-	@Override
-	public boolean updateJobTitle(int jobid, String title) {	
-		
-		//Ensure the title is not null value first, then proceed
-		if(title == null) {
-			return false;
-		}
-		
-		HashMap<String, String[]> sqlWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		String sql = "UPDATE jobtitle SET job_title = '" + title + "' WHERE job_id = " + jobid;
-		sqlWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Execute the db removal
-		if (dbm.executeQueryUpdateAuto(sqlWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;
-	}
-
-
-
-	/* Retrieve all the job titles in the jobtitle table in the database
-	 * @see com.thedawson.util.dao.RosterDAO#getJobTitles()
-	 * @return the arraylist of all the job title rows in the database in model objects
-	 */
-	@Override
-	public ArrayList<JobTitleModel> getAllJobTitles() {
-		ArrayList<JobTitleModel> jtmList = new ArrayList<JobTitleModel>();
-		
-		//Create SQL Query and execute it
-		String sql = "SELECT * FROM jobtitle";
-		
-		System.out.println(sql);
-		
-		CachedRowSet crs = dbm.executeQuerySelect(sql);
-		
-		try {
-			while (crs.next()) {
-				
-				int jobId = crs.getInt(1);
-				String jobTitle = crs.getString(2);
-				String isActive = crs.getString(3);
-				
-				boolean isActiveBool = true;
-				if(isActive.toUpperCase().equals("N")) {
-					isActiveBool = false;
-				}
-
-				jtmList.add(new JobTitleModel(jobId, jobTitle, isActiveBool));
-			}
-		} catch (SQLException se) {
-			jtmList = null;
-			se.printStackTrace();
-		}
-		
-		return jtmList;
-	}
-
-
-
-	/* Retrieves a particular job title from the jobtitle table in the database based on job id
-	 * @see com.thedawson.util.dao.RosterDAO#getJobTitleById(int)
-	 * @param jobid the job id you want to retrieve from the database.
-	 * @return a job title database result in model form with the associated jobid
-	 */
-	@Override
-	public JobTitleModel getJobTitleById(int jobid) {
-		JobTitleModel jtm = null;
-		
-		//Create SQL Query and execute it
-		String sql = "SELECT * FROM jobtitle where job_id = " + jobid;
-		
-		System.out.println(sql);
-		
-		CachedRowSet crs = dbm.executeQuerySelect(sql);
-		
-		//If crs is empty then no row exists with provided jobid, return null job title model below
-		//Otherwise do the try catch and create job title model object
-		if(crs.size() != 0) {
-			try {
-				crs.next();
-
-				int jobId = crs.getInt(1);
-				String jobTitle = crs.getString(2);
-				String isActive = crs.getString(3);
-				
-				boolean isActiveBool = true;
-				if(isActive.toUpperCase().equals("N")) {
-					isActiveBool = false;
-				}
-
-				jtm = new JobTitleModel(jobId, jobTitle, isActiveBool);
-
-			} catch (SQLException se) {
-				jtm = null;
-				se.printStackTrace();
-			}
-		}
-		
-		return jtm;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#addEmployee(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)
-	 */
-	@Override
-	public EmployeeModel addEmployee(String firstN, String lastN, String email,
-			String userid, String pwd, int hotelid, int jobid) {
-				
-				//Ensure all of the String parameters are not null first, then proceed
-				if(firstN == null || lastN == null || email == null || userid == null || pwd == null) {
-					return null;
-				}
-				
-				EmployeeModel em = null;
-
-				//Create SQL Query and execute it
-				try {
-					//Open a manual connection
-					dbm.openConnection();
-					
-					//Set Auto Commit off manually
-					dbm.setAutoCommit(false);
-					
-					//Execute query to insert into employee table
-					String sql = "INSERT INTO employee VALUES (null, '" + firstN + "', '" + lastN + "', '" + email + "', '" 
-							+ userid + "', '" + pwd + "', " + "'Y')"; 
-					String[] akgCols = {"e_id"};
-
-					System.out.println(sql);
-
-					//Retrieve the auto generated key from the database
-					Integer empGk = dbm.executeOneQueryUpdate(sql, akgCols);
-
-					System.out.println("Generated Key Employee: " + empGk);
-					
-					//If no auto gen keys were returned then there's a problem
-					if(empGk == null) {
-						throw new SQLException ("Query failed to retrieve generated keys when expected");
-					}
-
-					//No error, so continue processing
-					//Execute query to insert into employee directory table
-					String sql2 = "INSERT INTO employeedir VALUES (null, " + hotelid + ", " + empGk + ", " + jobid + ", 'Y')";
-					String[] akgCols2 = {"empldir_id"};
-
-					System.out.println(sql2);
-
-					//Commit and close all connections with true parameter after the query update
-					Integer empDirGk = dbm.executeOneQueryUpdate(sql2, akgCols2);
-
-					System.out.println("Generated Key Employee Dir: " + empDirGk);
-					
-					//Create the employee object model for return
-					em = new EmployeeModel(empGk, firstN, lastN, email, userid, pwd, true);
-					
-					//Commit the transaction
-					dbm.commit();
-					
-					//Set Auto Commit back to on manually
-					dbm.setAutoCommit(true);
-					
-					//Close Connection manually
-					dbm.closeConnection();
-					
-				} catch (SQLException se) {
-					se.printStackTrace();
-					
-					//Rollback manually
-					try { dbm.rollback(); } catch (SQLException se2) { se2.printStackTrace(); }
-					em = null;
-				}
-				
-				return em;
-	}
-
-	
-	
-	/* Deletes an employee from the database
-	 * @see com.thedawson.util.dao.RosterDAO#removeEmployee(int)
-	 * @param the employee database id to remove
-	 * @return boolean determine if the update ran successfully or was rolled back and failed
-	 */
-	@Override
-	public boolean removeEmployee(int empid) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		//Delete from Employee Directory first since there are constraints, cannot delete Employee first
-		String sql = "DELETE FROM employeedir WHERE emp_id = " + empid;
-		sqlsWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Add the remove Employee query 2nd in the queue
-		String sql2 = "DELETE FROM employee WHERE e_id = " + empid;
-		sqlsWithAkgCols.put(sql2, null);
-		
-		System.out.println(sql2);
-		
-		//Execute the db removal from Employee Dir and Employee in one call.
-		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;
-	}
-	
-	
-	
-	/* Changes the Active status of the employee
-	 * @param state true for activate, false for make inactive
-	 * @return boolean determine if the update ran successfully or was rolled back and failed
-	 */
-	@Override
-	public boolean setEmployeeActiveStatus(int empid, boolean state) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		String status = null;
-		
-		if(state) {
-			status = "Y";
-		}
-		else {
-			status = "N";
-		}
-			
-		String sql = "UPDATE employee SET is_active = '" + status + "' WHERE e_id = " + empid;
-		sqlsWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Execute the db removal
-		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;
-	}
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#updateEmployee(int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)
-	 */
-	@Override
-	public boolean updateEmployee(int empid, String firstN, String lastN,
-			String email, String userid, String pwd, int hotelid, int jobid) {
-		
-		//Ensure all String parameters are not null first, then proceed
-		if(firstN == null || lastN == null || email == null || userid == null || pwd == null) {
-			return false;
-		}
-
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-
-		//Create SQL Query and execute it
-		String sql = "UPDATE employee SET first_name = '" + firstN + "', "
-				+ "last_name = '" + lastN + "', "
-				+ "email = '" + email + "', "
-				+ "username = '" + userid + "', "
-				+ "encr_pwd = '" + pwd + "' "
-				+ " WHERE e_id = " + empid;
-		sqlsWithAkgCols.put(sql, null);
-
-		System.out.println(sql);
-
-		//Execute the db removal
-		if (dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-
-		return true;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getAllEmployees()
-	 */
-	@Override
-	public ArrayList<EmployeeModel> getAllEmployees() {
-		
-		ArrayList<EmployeeModel> emList = new ArrayList<EmployeeModel>();
-		
-		//Create SQL Query and execute it
-		String sql = "SELECT * FROM employee";
-		
-		System.out.println(sql);
-		
-		CachedRowSet crs = dbm.executeQuerySelect(sql);
-		
-		try {
-			while (crs.next()) {
-				
-				int empId = crs.getInt(1);
-				String firstN = crs.getString(2);
-				String lastN = crs.getString(3);
-				String email = crs.getString(4);
-				String userid = crs.getString(5);
-				String pwd = crs.getString(6);
-				String isActive = crs.getString(7);
-				
-				boolean isActiveBool = true;
-				if(isActive.toUpperCase().equals("N")) {
-					isActiveBool = false;
-				}
-
-				emList.add(new EmployeeModel(empId, firstN, lastN, email, userid, pwd, isActiveBool));
-			}
-		} catch (SQLException se) {
-			emList = null;
-			se.printStackTrace();
-		}
-		
-		return emList;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getEmployeeById(int)
-	 */
-	@Override
-	public EmployeeModel getEmployeeById(int empid) {
-		EmployeeModel em = null;
-		
-		//Create SQL Query and execute it
-		String sql = "SELECT * FROM employee where e_id = " + empid;
-		
-		System.out.println(sql);
-		
-		CachedRowSet crs = dbm.executeQuerySelect(sql);
-		
-		//If crs is empty then no row exists with provided empid, return null employee model below
-		//Otherwise do the try catch and create employee model object
-		if(crs.size() != 0) {
-			try {
-				crs.next();
-
-				int empId = crs.getInt(1);
-				String firstN = crs.getString(2);
-				String lastN = crs.getString(3);
-				String email = crs.getString(4);
-				String userid = crs.getString(5);
-				String pwd = crs.getString(6);
-				String isActive = crs.getString(7);
-				
-				boolean isActiveBool = true;
-				if(isActive.toUpperCase().equals("N")) {
-					isActiveBool = false;
-				}
-
-				em = new EmployeeModel(empId, firstN, lastN, email, userid, pwd, isActiveBool);
-
-			} catch (SQLException se) {
-				em = null;
-				se.printStackTrace();
-			}
-		}
-		
-		return em;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#addEmployeeDir(int, int, int)
-	 */
-	@Override
-	public EmployeeDirModel addEmployeeDir(int hotelid, int empid, int jobid) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		ArrayList<Integer> genKeysList = null;
-		EmployeeDirModel edm = null;
-		
-		//Create SQL Query and execute it
-		String sql = "INSERT INTO employeedir VALUES (null, " + hotelid + ", " + empid + ", " + jobid + ", 'Y')";
-		String[] akgCols = {"empldir_id"};
-		sqlsWithAkgCols.put(sql, akgCols);
-		
-		System.out.println(sql);
-
-		//Commit and close all connections with true parameter after the query update
-		genKeysList = dbm.executeQueryUpdateAuto(sqlsWithAkgCols);
-		
-		//If there was a SQL Error in executeQueryUpdateAuto then genKeyList will be null
-		if(genKeysList == null) {
-			return edm;
-		}
-
-		//No error, so process genKeyList
-		Integer edGenKey = genKeysList.get(0);
-		int edGk = edGenKey.intValue();
-
-		//Create the emp dir object model for return
-		System.out.println("Generated Key Empl Dir: " + edGk);
-		edm = new EmployeeDirModel(edGk, hotelid, empid, jobid, true);
-
-		return edm;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#removeEmployeeDir(int)
-	 */
-	@Override
-	public boolean removeEmployeeDir(int empdirid) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		String sql = "DELETE FROM employeedir WHERE empldir_id = " + empdirid;
-		sqlsWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Execute the db removal
-		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#setEmployeeDirActiveStatus(int, boolean)
-	 */
-	@Override
-	public boolean setEmployeeDirActiveStatus(int empdirid, boolean state) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		String status = null;
-		
-		if(state) {
-			status = "Y";
-		}
-		else {
-			status = "N";
-		}
-			
-		
-		String sql = "UPDATE employeedir SET is_active = '" + status + "' WHERE empldir_id = " + empdirid;
-		sqlsWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Execute the db removal
-		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;	
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#updateEmployeeDir(int, int, int, int)
-	 */
-	@Override
-	public boolean updateEmployeeDir(int empdirid, int hotelid, int empid,
-			int jobid) {
-
-		HashMap<String, String[]> sqlWithAkgCols = new HashMap<String, String[]>();
-
-		//Create SQL Query and execute it
-		String sql = "UPDATE employeedir SET hotel_id = '" + hotelid + "', "
-				+ "emp_id = '" + empid + "' "
-				+ "WHERE empldir_id = " + empdirid;
-		sqlWithAkgCols.put(sql, null);
-
-		System.out.println(sql);
-
-		//Execute the db removal
-		if (dbm.executeQueryUpdateAuto(sqlWithAkgCols) == null) {
-			return false;
-		}
-
-		return true;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getAllEmployeeDirs()
-	 */
-	@Override
-	public ArrayList<EmployeeDirModel> getAllEmployeeDirs() {
-		ArrayList<EmployeeDirModel> edList = new ArrayList<EmployeeDirModel>();
-		
-		//Create SQL Query and execute it
-		String sql = "SELECT * FROM employeedir";
-		
-		System.out.println(sql);
-		
-		CachedRowSet crs = dbm.executeQuerySelect(sql);
-		
-		try {
-			while (crs.next()) {
-				
-				int empdirId = crs.getInt(1);
-				int hotelId = crs.getInt(2);
-				int empId = crs.getInt(3);
-				int jobId = crs.getInt(4);
-				String isActive = crs.getString(5);
-				
-				boolean isActiveBool = true;
-				if(isActive.toUpperCase().equals("N")) {
-					isActiveBool = false;
-				}
-
-				edList.add(new EmployeeDirModel(empdirId, hotelId, empId, jobId, isActiveBool));
-			}
-		} catch (SQLException se) {
-			edList = null;
-			se.printStackTrace();
-		}
-		
-		return edList;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getEmployeeDirById(int)
-	 */
-	@Override
-	public EmployeeDirModel getEmployeeDirById(int empdirid) {
-		EmployeeDirModel edm = null;
-		
-		//Create SQL Query and execute it
-		String sql = "SELECT * FROM employeedir where empldir_id = " + empdirid;
-		
-		System.out.println(sql);
-		
-		CachedRowSet crs = dbm.executeQuerySelect(sql);
-		
-		//If crs is empty then no row exists with provided empdirid, return null employee dir model below
-		//Otherwise do the try catch and create employee dir model object
-		if(crs.size() != 0) {
-			try {
-				crs.next();
-
-				int empdirId = crs.getInt(1);
-				int hotelId = crs.getInt(2);
-				int empId = crs.getInt(3);
-				int jobId = crs.getInt(4);
-				String isActive = crs.getString(5);
-				
-				boolean isActiveBool = true;
-				if(isActive.toUpperCase().equals("N")) {
-					isActiveBool = false;
-				}
-
-				edm = new EmployeeDirModel(empdirId, hotelId, empId, jobId, isActiveBool);
-
-			} catch (SQLException se) {
-				edm = null;
-				se.printStackTrace();
-			}
-		}
-		
-		return edm;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#addHotel(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public HotelModel addHotel(String hname, String haddr, String hcity,
-			String hcntry, String hphone, String hfax) {
-		
-		//Ensure none of the String parameters are null first, then proceed
-		if(hname == null || haddr == null || hcity == null || hcntry == null || hphone == null || hfax == null) {
-			return null;
-		}
-
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		ArrayList<Integer> genKeysList = null;
-		HotelModel hm = null;
-
-		//Create SQL Query and execute it
-		String sql = "INSERT INTO hotel VALUES (null, '" + hname + "', '" + haddr + "', '" + hcity + "', '" + hcntry + "', '" 
-							+ hphone + "', '" + hfax + "', 'Y')";
-		String[] akgCols = {"h_id"};
-		sqlsWithAkgCols.put(sql, akgCols);
-
-		System.out.println(sql);
-
-		//Retrieve the auto generated key from the database
-		genKeysList = dbm.executeQueryUpdateAuto(sqlsWithAkgCols);
-
-		//If there was a SQL Error in executeQueryUpdateAuto then genKeyList will be null
-		if(genKeysList == null) {
-			return hm;
-		}
-
-		//No error, so process genKeyList
-		Integer hGenKey = genKeysList.get(0);
-		int hotGk = hGenKey.intValue();
-
-		//Create the hotel object model for return
-		System.out.println("Generated Key Hotel: " + hotGk);
-		hm = new HotelModel(hotGk, hname, haddr, hcity, hcntry, hphone, hfax, true);
-
-		return hm;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#removeHotel(int)
-	 */
-	@Override
-	public boolean removeHotel(int hotelid) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		String sql = "DELETE FROM hotel WHERE h_id = " + hotelid;
-		sqlsWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Execute the db removal
-		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;
-	}
-
-
-	/* Changes the Active status of the job title
-	 * @param state true for activate, false for make inactive
-	 * @return boolean determine if the update ran successfully or was rolled back and failed
-	 */
-	@Override
-	public boolean setHotelActiveStatus(int hotelid, boolean state) {
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-		
-		//Create SQL Query and execute it
-		String status = null;
-		
-		if(state) {
-			status = "Y";
-		}
-		else {
-			status = "N";
-		}
-			
-		
-		String sql = "UPDATE hotel SET is_active = '" + status + "' WHERE h_id = " + hotelid;
-		sqlsWithAkgCols.put(sql, null);
-		
-		System.out.println(sql);
-		
-		//Execute the db removal
-		if(dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-		
-		return true;
-	}
-	
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#updateHotel(int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
-	 */
-	@Override
-	public boolean updateHotel(int hotelid, String hname, String haddr,
-			String hcity, String hcntry, String hphone, String hfax) {
-		
-		//Ensure the String parameters are not null first, then proceed
-		if(hname == null || haddr == null || hcity == null || hcntry == null || hphone == null || hfax == null) {
-			return false;
-		}
-
-		HashMap<String, String[]> sqlsWithAkgCols = new HashMap<String, String[]>();
-
-		//Create SQL Query and execute it
-		String sql = "UPDATE hotel SET h_name = '" + hname + "', "
-				+ "h_addr = '" + haddr + "', "
-				+ "h_city = '" + hcity + "', "
-				+ "h_country = '" + hcntry + "', "
-				+ "h_tel = '" + hphone + "', "
-				+ "h_fax = '" + hfax + "' "
-				+ " WHERE h_id = " + hotelid;
-		sqlsWithAkgCols.put(sql, null);
-
-		System.out.println(sql);
-
-		//Execute the db removal
-		if (dbm.executeQueryUpdateAuto(sqlsWithAkgCols) == null) {
-			return false;
-		}
-
-		return true;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getAllHotels()
-	 */
-	@Override
-	public ArrayList<HotelModel> getAllHotels() {
-		ArrayList<HotelModel> hList = new ArrayList<HotelModel>();
-		
-		//Create SQL Query and execute it
-		String sql = "SELECT * FROM hotel";
-		
-		System.out.println(sql);
-		
-		CachedRowSet crs = dbm.executeQuerySelect(sql);
-		
-		try {
-			while (crs.next()) {
-				
-				int hotelId = crs.getInt(1);
-				String hName = crs.getString(2);
-				String hAddr = crs.getString(3);
-				String hCity = crs.getString(4);
-				String hCntry = crs.getString(5);
-				String hTel = crs.getString(6);
-				String hFax = crs.getString(7);
-				String isActive = crs.getString(8);
-				
-				boolean isActiveBool = true;
-				if(isActive.toUpperCase().equals("N")) {
-					isActiveBool = false;
-				}
-
-				hList.add(new HotelModel(hotelId, hName, hAddr, hCity, hCntry, hTel, hFax, isActiveBool));
-			}
-		} catch (SQLException se) {
-			hList = null;
-			se.printStackTrace();
-		}
-		
-		return hList;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getHotelById(int)
-	 */
-	@Override
-	public HotelModel getHotelById(int hotelid) {
-		HotelModel hm = null;
-		
-		//Create SQL Query and execute it
-		String sql = "SELECT * FROM hotel where h_id = " + hotelid;
-		
-		System.out.println(sql);
-		
-		CachedRowSet crs = dbm.executeQuerySelect(sql);
-		
-		//If crs is empty then no row exists with provided h_id, return null hotel model below
-		//Otherwise do the try catch and create hotel model object
-		if(crs.size() != 0) {
-			try {
-				crs.next();
-
-				int hotelId = crs.getInt(1);
-				String hName = crs.getString(2);
-				String hAddr = crs.getString(3);
-				String hCity = crs.getString(4);
-				String hCntry = crs.getString(5);
-				String hTel = crs.getString(6);
-				String hFax = crs.getString(7);
-				String isActive = crs.getString(8);
-				
-				boolean isActiveBool = true;
-				if(isActive.toUpperCase().equals("N")) {
-					isActiveBool = false;
-				}
-
-				hm = new HotelModel(hotelId, hName, hAddr, hCity, hCntry, hTel, hFax, isActiveBool);
-
-			} catch (SQLException se) {
-				hm = null;
-				se.printStackTrace();
-			}
-		}
-		
-		return hm;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#addNextWorkSchedule(int, java.util.Date, java.util.Date)
-	 */
-	@Override
-	public WorkScheduleModel addNextWorkSchedule(int hotelid, Date startD,
-			Date endD) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#deleteAWorkSchedule(int)
-	 */
-	@Override
-	public boolean deleteAWorkSchedule(int ws_id) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#updateCurWorkSchedule(int, int, java.util.Date, java.util.Date)
-	 */
-	@Override
-	public boolean updateCurWorkSchedule(int ws_id, int hotelid, Date startD,
-			Date endD) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getAllSchedules()
-	 */
-	@Override
-	public ArrayList<WorkScheduleModel> getAllSchedules() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getSchedulesByDate(java.util.Date, java.util.Date)
-	 */
-	@Override
-	public ArrayList<WorkScheduleModel> getSchedulesByDate(Date startD,
-			Date endD) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getScheduleByID(int)
-	 */
-	@Override
-	public WorkScheduleModel getScheduleByID(int ws_id) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#addWorkDay(int, int, int, java.util.Date, double)
-	 */
-	@Override
-	public WorkDayModel addWorkDay(int wrksched_id, int emp_id, int job_id,
-			Date shift_date, double shift_len) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#deleteAWorkDay(int)
-	 */
-	@Override
-	public boolean deleteAWorkDay(int wd_id) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#updateAWorkDay(int, int, int, int, java.util.Date, double)
-	 */
-	@Override
-	public boolean updateAWorkDay(int wd_id, int wrksched_id, int emp_id,
-			int job_id, Date shift_date, double shift_len) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getWorkDaysByDate(java.util.Date, java.util.Date)
-	 */
-	@Override
-	public ArrayList<WorkDayModel> getWorkDaysByDate(Date startD, Date endD) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-
-	/* (non-Javadoc)
-	 * @see com.thedawson.util.dao.RosterDAO#getWorkDaysBySchedIDs(java.util.ArrayList)
-	 */
-	@Override
-	public ArrayList<WorkDayModel> getWorkDaysBySchedIDs(
-			ArrayList<Integer> sched_ids) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 }
