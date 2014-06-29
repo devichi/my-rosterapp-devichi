@@ -10,8 +10,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.thedawson.util.dao.RosterDAO;
-import com.thedawson.util.dao.RosterDAOFactory;
+import com.thedawson.util.dao.BaseDAO;
+import com.thedawson.util.dao.DAOFactory;
 import com.thedawson.util.model.EmployeeModel;
 import com.thedawson.util.model.JobTitleModel;
 
@@ -30,13 +30,13 @@ public class LoginValidator extends HttpServlet {
 		
 		out.println("The POST WORKS!!!!  VIctor");
 		
+		DAOFactory df = DAOFactory.getInstance();
 		
-		RosterDAOFactory rdf = new RosterDAOFactory();
-		RosterDAO rd = rdf.getDao();
+		BaseDAO rd = df.getRosterDao(); 
 		
-		
+		/*
 		System.out.println("Adding a new employee to the database");
-		
+	
 		EmployeeModel em = rd.addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 4);
 		//EmployeeModel em = rd.addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 9);
 		
@@ -61,7 +61,7 @@ public class LoginValidator extends HttpServlet {
 		else {
 			System.out.println("Employee Model Null: " + (em == null));
 		}
-		
+		*/
 		
 		
 		/*

@@ -3,7 +3,7 @@
  */
 package com.thedawson.util.model;
 
-import java.util.Calendar;
+import java.util.Date;
 
 /**
  * Model class to store Work Day information from database.
@@ -14,16 +14,18 @@ public class WorkDayModel {
 	private int workScheduleId;
 	private int employeeId;
 	private int jobTitleId;
-	private Calendar shiftDateAndTime;
+	private Date shiftDateAndTime;
+	private double shiftLength;
 	
 	//Constructor
 	public WorkDayModel(int workDayId, int workScheduleId, int employeeId,
-			int jobTitleId, Calendar shiftDateAndTime) {
+			int jobTitleId, Date shiftDateAndTime, double shiftLenth) {
 		this.workDayId = workDayId;
 		this.workScheduleId = workScheduleId;
 		this.employeeId = employeeId;
 		this.jobTitleId = jobTitleId;
 		this.shiftDateAndTime = shiftDateAndTime;
+		this.shiftLength = shiftLength;
 	}
 
 	//Getters and Setters for the class
@@ -59,11 +61,20 @@ public class WorkDayModel {
 		this.jobTitleId = jobTitleId;
 	}
 
-	public Calendar getShiftDateAndTime() {
+	public Date getShiftDateAndTime() {
 		return shiftDateAndTime;
 	}
 
-	public void setShiftDateAndTime(Calendar shiftDateAndTime) {
+	public void setShiftDateAndTime(Date shiftDateAndTime) {
 		this.shiftDateAndTime = shiftDateAndTime;
 	}
+
+	public double getShiftLength() {
+		return shiftLength;
+	}
+
+	public void setShiftLength(double shiftLength) {
+		this.shiftLength = shiftLength;
+	}
+	
 }
