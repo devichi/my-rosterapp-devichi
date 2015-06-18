@@ -1,0 +1,1 @@
+A way for businesses with weekly roster changes to pull details about upcoming work weeks, historic information, and manage details about the roster.
