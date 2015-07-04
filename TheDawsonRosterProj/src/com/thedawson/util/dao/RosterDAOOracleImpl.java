@@ -15,9 +15,10 @@ import com.thedawson.util.model.JobTitleModel;
 import com.thedawson.util.model.WorkDayModel;
 import com.thedawson.util.model.WorkScheduleModel;
 
-public class RosterDAOOracleImpl extends BaseDAO {
+public class RosterDAOOracleImpl extends RosterDAO {
 	
 	private ResultSet rs = null;
+	private PreparedStatement ps = null;
 	
 	/* Adds a job title row to the database
 	 * @param title The title of the new job position
@@ -42,7 +43,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps = this.getConnection().prepareStatement(sql, akgCols);
 			ps.setString(1, title);
 			ps.setString(2, "Y");
 
@@ -81,8 +82,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			jtm = null;
 		}
 		finally {
+			this.closeConnection(ps, rs);
 			rs = null;
-			this.closeConnection();
+			ps = null;
 		}
 		
 		return jtm;
@@ -104,7 +106,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, jobid);
 			int rowsUpdated = ps.executeUpdate();
 
@@ -126,7 +128,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -159,7 +162,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = getConnection().setSavepoint("Savepoint"); 
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setString(1, status);
 			ps.setInt(2, jobid);
 
@@ -183,7 +186,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -211,7 +215,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setString(1, title);
 			ps.setInt(2, jobid);
 
@@ -235,7 +239,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -255,7 +260,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		System.out.println(sql);
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			rs = ps.executeQuery();
 			
 			while (rs.next()) {
@@ -277,8 +282,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			jtmList = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return jtmList;
@@ -298,10 +304,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		String sql = "SELECT * FROM jobtitle where job_id = (?)";
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, jobid);
-			
-			System.out.println(ps);
 			
 			rs = ps.executeQuery();
 			
@@ -325,8 +329,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			jtm = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return jtm;
@@ -360,7 +365,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 					String sql = "INSERT INTO employee VALUES (null, (?), (?), (?), (?), (?), (?))"; 
 					String[] akgCols = {"e_id"};
 
-					PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+					ps = this.getConnection().prepareStatement(sql, akgCols);
 					ps.setString(1, firstN);
 					ps.setString(2, lastN);
 					ps.setString(3, email);
@@ -439,8 +444,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 					em = null;
 				}
 				finally {
+					this.closeConnection(ps, rs);
 					rs = null;
-					this.closeConnection();
+					ps = null;
 				}
 				
 				return em;
@@ -467,7 +473,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			//Delete from Employee Directory first since there are constraints, cannot delete Employee first
 			String sql = "DELETE FROM employeedir WHERE emp_id = (?)";
 			
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, empid);
 			
 			int rowsUpdated = ps.executeUpdate();
@@ -504,7 +510,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -537,7 +544,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = getConnection().setSavepoint("Savepoint"); 
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setString(1, status);
 			ps.setInt(2, empid);
 
@@ -561,7 +568,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -594,7 +602,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setString(1, firstN);
 			ps.setString(2, lastN);
 			ps.setString(3, email);
@@ -622,7 +630,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 
 		return returnStatus;
@@ -643,7 +652,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		System.out.println(sql);
 
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			rs = ps.executeQuery();
 
 			while (rs.next()) {
@@ -669,8 +678,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			emList = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return emList;
@@ -690,7 +700,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		System.out.println(sql);
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, empid);
 			
 			System.out.println(ps);
@@ -721,8 +731,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			em = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return em;
@@ -749,7 +760,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps = this.getConnection().prepareStatement(sql, akgCols);
 			ps.setInt(1, hotelid);
 			ps.setInt(2, empid);
 			ps.setInt(3, jobid);
@@ -790,8 +801,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			edm = null;
 		}
 		finally {
+			this.closeConnection(ps, rs);
 			rs = null;
-			this.closeConnection();
+			ps = null;
 		}
 
 		return edm;
@@ -814,7 +826,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, empdirid);
 			int rowsUpdated = ps.executeUpdate();
 
@@ -836,7 +848,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -869,7 +882,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = getConnection().setSavepoint("Savepoint"); 
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setString(1, status);
 			ps.setInt(2, empdirid);
 
@@ -893,7 +906,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;	
@@ -919,7 +933,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, hotelid);
 			ps.setInt(2, empid);
 			ps.setInt(3, empdirid);
@@ -944,7 +958,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -964,7 +979,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		System.out.println(sql);
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			rs = ps.executeQuery();
 			
 			while (rs.next()) {
@@ -988,8 +1003,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			edList = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return edList;
@@ -1007,7 +1023,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		String sql = "SELECT * FROM employeedir where empldir_id = (?)";
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, empdirid);
 			
 			System.out.println(ps);
@@ -1036,8 +1052,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			edm = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return edm;
@@ -1068,7 +1085,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps = this.getConnection().prepareStatement(sql, akgCols);
 			ps.setString(1, hname);
 			ps.setString(2, haddr);
 			ps.setString(3, hcity);
@@ -1111,9 +1128,10 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			try { this.getConnection().rollback(sp); } catch(SQLException se2) { se2.printStackTrace(); }
 			hm = null;
 		}
-		finally {
+		finally {			
+			this.closeConnection(ps, rs);
 			rs = null;
-			this.closeConnection();
+			ps = null;
 		}
 
 		return hm;
@@ -1136,7 +1154,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, hotelid);
 			int rowsUpdated = ps.executeUpdate();
 
@@ -1158,7 +1176,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -1191,7 +1210,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = getConnection().setSavepoint("Savepoint"); 
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setString(1, status);
 			ps.setInt(2, hotelid);
 
@@ -1215,7 +1234,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -1250,7 +1270,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setString(1, hname);
 			ps.setString(2, haddr);
 			ps.setString(3, hcity);
@@ -1279,7 +1299,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -1299,7 +1320,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		System.out.println(sql);
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			rs = ps.executeQuery();
 			
 			while (rs.next()) {
@@ -1326,8 +1347,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			hList = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return hList;
@@ -1346,7 +1368,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		String sql = "SELECT * FROM hotel where h_id = (?)";
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, hotelid);
 			
 			System.out.println(ps);
@@ -1378,8 +1400,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			hm = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return hm;
@@ -1410,7 +1433,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps = this.getConnection().prepareStatement(sql, akgCols);
 			ps.setInt(1, hotelid);
 			ps.setDate(2, startD);
 			ps.setDate(3, endD);
@@ -1450,8 +1473,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			wsm = null;
 		}
 		finally {
+			this.closeConnection(ps, rs);
 			rs = null;
-			this.closeConnection();
+			ps = null;
 		}
 
 		return wsm;
@@ -1474,7 +1498,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, wsid);
 			int rowsUpdated = ps.executeUpdate();
 
@@ -1496,7 +1520,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -1527,7 +1552,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, hotelid);
 			ps.setDate(2, startD);
 			ps.setDate(3, endD);
@@ -1553,7 +1578,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -1573,7 +1599,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		System.out.println(sql);
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			rs = ps.executeQuery();
 			
 			while (rs.next()) {
@@ -1591,8 +1617,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			wsList = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return wsList;
@@ -1621,7 +1648,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 						+ "OR (start date < (?) AND end_date > (?)))";
 		
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setDate(1, startD);
 			ps.setDate(2, endD);
 			ps.setDate(3, startD);
@@ -1647,8 +1674,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			wsList = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 		
 		return wsList;
@@ -1667,7 +1695,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		String sql = "SELECT * FROM workschedule WHERE wksched_id = (?)";
 
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, wsid);
 			
 			System.out.println(ps);
@@ -1690,8 +1718,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			wsm = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 
 		return wsm;
@@ -1722,7 +1751,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql, akgCols);
+			ps = this.getConnection().prepareStatement(sql, akgCols);
 			ps.setInt(1, wkschedid);
 			ps.setInt(2, empid);
 			ps.setInt(3, jobid);
@@ -1764,8 +1793,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			wdm = null;
 		}
 		finally {
+			this.closeConnection(ps, rs);
 			rs = null;
-			this.closeConnection();
+			ps = null;
 		}
 
 		return wdm;
@@ -1788,7 +1818,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, wdid);
 			int rowsUpdated = ps.executeUpdate();
 
@@ -1810,7 +1840,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 		
 		return returnStatus;
@@ -1843,7 +1874,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		try {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setInt(1, wkschedid);
 			ps.setInt(2, empid);
 			ps.setInt(3, jobid);
@@ -1871,7 +1902,8 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			returnStatus = false;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
+			ps = null;
 		}
 
 		return returnStatus;
@@ -1897,7 +1929,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		String sql = "SELECT * FROM workday WHERE shift_date >= (?) AND shift_date <= (?)";
 
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			ps.setDate(1, startD);
 			ps.setDate(2, endD);
 			
@@ -1921,8 +1953,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			wdList = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 
 		return wdList;
@@ -1941,7 +1974,7 @@ public class RosterDAOOracleImpl extends BaseDAO {
 		String sql = "SELECT * FROM workday WHERE wksched_id = (?)";
 
 		try {
-			PreparedStatement ps = this.getConnection().prepareStatement(sql);
+			ps = this.getConnection().prepareStatement(sql);
 			
 			//Iterate through all the schedule ids in the arraylist and retrieve all the workday results associated
 			Iterator<Integer> schedIter = schedids.iterator();
@@ -1973,8 +2006,9 @@ public class RosterDAOOracleImpl extends BaseDAO {
 			wdmList = null;
 		}
 		finally {
-			this.closeConnection();
+			this.closeConnection(ps, rs);
 			rs = null;
+			ps = null;
 		}
 
 		return wdmList;

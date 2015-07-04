@@ -22,13 +22,15 @@ public class DAOFactory {
 	};
 		
 	private static DataSource ods = null;
-	private static BaseDAO dao = null;
+	private static RosterDAO dao = null;
 	
 	//Retrieves the Data Source
 	private DAOFactory() {
 		try {
 			Context ic = new InitialContext();
-			ods = (DataSource)ic.lookup("java:comp/env/jdbc/rosterdb");
+			ods = (DataSource)ic.lookup("java:comp/env/jdbc/tdrosterdb");
+			
+			System.out.println("Oracle Data Source null: " + (ods == null));
 		} catch (NamingException ne) {
 			ne.printStackTrace();
 		}
@@ -42,7 +44,7 @@ public class DAOFactory {
 		return DBMS_INSTANCE.get();
 	}
 	
-	public BaseDAO getRosterDao() {
+	public RosterDAO getRosterDao() {
 	  
 		//Roster DAO has already been set so simply return it
 		if(dao != null) {
@@ -66,7 +68,7 @@ public class DAOFactory {
 			
 			System.out.println("Dao Impl Class: " + daoImplClass);
 			
-			dao = (BaseDAO) Class.forName(daoImplClass).newInstance();
+			dao = (RosterDAO) Class.forName(daoImplClass).newInstance();
 			dao.setConnection(ods.getConnection());
 			
 			System.out.println("DAO has been set with a new instance");
@@ -81,7 +83,7 @@ public class DAOFactory {
 	
 	public static void main(String[] args) {
 		DAOFactory rf = DAOFactory.getInstance();
-		BaseDAO rd = rf.getRosterDao();
+		RosterDAO rd = rf.getRosterDao();
 		
 		System.out.println ("Is dao object null: " + (rd==null));
 		

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <!-- Specify a JDBC datasource -->
+    <Resource name="jdbc/tdrosterdb" auth="Container"
+        type="javax.sql.DataSource" username="tdroster_admin" password="tdrosterMbabyChow09"
+        driverClassName="oracle.jdbc.OracleDriver"
+        url="jdbc:oracle:thin:@localhost:1521/tdrosterdb"
+        maxActive="10" maxIdle="4" />
+ 
+</Context>
