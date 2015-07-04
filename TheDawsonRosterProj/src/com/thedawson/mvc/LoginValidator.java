@@ -32,12 +32,16 @@ public class LoginValidator extends HttpServlet {
 		DAOFactory df = DAOFactory.getInstance();
 		
 		
-		//System.out.println("Adding a new employee to the database");
+		System.out.println("Get Employee by ID");
 	
-		//EmployeeModel em = df.getRosterDao().addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 4);
+		EmployeeModel em = df.getRosterDao().getEmployeeById(3);
+		
+		System.out.println("Adding a new employee to the database");
+		
+		em = df.getRosterDao().addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 4);
 		//EmployeeModel em = df.getRosterDao().addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 9);
 		
-		/*
+		
 		if(em != null) {
 			System.out.println("FName: " + em.getFirstName() + " LName: " + em.getLastName() + " Email: " + em.getEmail() 
 							+ " User: " + em.getUserName() + " Pwd: " + em.getEncrPassword() + " isActive: " + em.getIsActive());
@@ -60,7 +64,7 @@ public class LoginValidator extends HttpServlet {
 			System.out.println("Employee Model Null: " + (em == null));
 		}
 		
-		*/
+		
 		
 		/*
 		JobTitleModel jtm = df.getRosterDao().getJobTitleById(5);
