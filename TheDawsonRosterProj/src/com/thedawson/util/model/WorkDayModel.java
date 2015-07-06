@@ -19,7 +19,7 @@ public class WorkDayModel {
 	
 	//Constructor
 	public WorkDayModel(int workDayId, int workScheduleId, int employeeId,
-			int jobTitleId, Date shiftDateAndTime, double shiftLenth) {
+			int jobTitleId, Date shiftDateAndTime, double shiftLength) {
 		this.workDayId = workDayId;
 		this.workScheduleId = workScheduleId;
 		this.employeeId = employeeId;

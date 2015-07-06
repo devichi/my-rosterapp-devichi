@@ -8,12 +8,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import com.thedawson.util.dao.DAOFactory;
-import com.thedawson.util.model.*;
-
 /**
  * Servlet implementation class LoginValidator
  */
@@ -29,7 +23,7 @@ public class LoginValidator extends HttpServlet {
 		
 		out.println("The POST WORKS!!!!  VIctor");
 		
-		
+	
 	}
 	
 }
