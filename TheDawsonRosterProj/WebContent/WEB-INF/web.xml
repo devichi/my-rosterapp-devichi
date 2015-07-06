@@ -16,6 +16,72 @@
     <url-pattern>/loginvalidator</url-pattern>
   </servlet-mapping>
   
+  <servlet>
+    <description></description>
+    <display-name>TestJobDAOMethods</display-name>
+    <servlet-name>TestJobDAOMethods</servlet-name>
+    <servlet-class>com.thedawson.testharness.TestJobDAOMethods</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestJobDAOMethods</servlet-name>
+    <url-pattern>/testjobdaomethods</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <description></description>
+    <display-name>TestEmployeeDAOMethods</display-name>
+    <servlet-name>TestEmployeeDAOMethods</servlet-name>
+    <servlet-class>com.thedawson.testharness.TestEmployeeDAOMethods</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestEmployeeDAOMethods</servlet-name>
+    <url-pattern>/testemployeeaomethods</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <description></description>
+    <display-name>TestEmployeeDirDAOMethods</display-name>
+    <servlet-name>TestEmployeeDirDAOMethods</servlet-name>
+    <servlet-class>com.thedawson.testharness.TestEmployeeDirDAOMethods</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestEmployeeDirDAOMethods</servlet-name>
+    <url-pattern>/testemployeedirdaomethods</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <description></description>
+    <display-name>TestHotelDAOMethods</display-name>
+    <servlet-name>TestHotelDAOMethods</servlet-name>
+    <servlet-class>com.thedawson.testharness.TestHotelDAOMethods</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestHotelDAOMethods</servlet-name>
+    <url-pattern>/testhoteldaomethods</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <description></description>
+    <display-name>TestWorkSchedDAOMethods</display-name>
+    <servlet-name>TestWorkSchedDAOMethods</servlet-name>
+    <servlet-class>com.thedawson.testharness.TestWorkSchedDAOMethods</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestWorkSchedDAOMethods</servlet-name>
+    <url-pattern>/testworkscheddaomethods</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+    <description></description>
+    <display-name>TestWorkDayDAOMethods</display-name>
+    <servlet-name>TestWorkDayDAOMethods</servlet-name>
+    <servlet-class>com.thedawson.testharness.TestWorkDayDAOMethods</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>TestWorkDayDAOMethods</servlet-name>
+    <url-pattern>/testworkdaydaomethods</url-pattern>
+  </servlet-mapping>
+  
   <env-entry>
     <env-entry-name>DAO.Impl</env-entry-name>
     <env-entry-type>java.lang.String</env-entry-type>

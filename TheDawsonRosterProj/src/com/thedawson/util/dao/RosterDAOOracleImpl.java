@@ -454,12 +454,12 @@ public class RosterDAOOracleImpl extends RosterDAO {
 
 	
 	
-	/* Deletes an employee from the database
+	/* Deactivates an employee in the database, but keeps its historic record data intact
 	 * @see com.thedawson.util.dao.RosterDAO#removeEmployee(int)
 	 * @param the employee database id to remove
 	 * @return boolean determine if the update ran successfully or was rolled back and failed
 	 */
-	public boolean removeEmployee(int empid) {
+	public boolean deactivateEmployee(int empid) {
 		
 		boolean returnStatus = true;
 		
@@ -470,34 +470,20 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
 			
-			//Delete from Employee Directory first since there are constraints, cannot delete Employee first
-			String sql = "DELETE FROM employeedir WHERE emp_id = (?)";
+			//Deactive all Employee Directory entries for this employee (i.e. he can no longer work)
+			//Get all the directory entries for this employee
+			String sql1 = "SELECT * FROM employeedir WHERE emp_id = " + empid;
+			ps = this.getConnection().prepareStatement(sql1);
+			rs = ps.executeQuery();
 			
-			ps = this.getConnection().prepareStatement(sql);
-			ps.setInt(1, empid);
-			
-			int rowsUpdated = ps.executeUpdate();
-			
-			//Check to see if the query failed to updated the database
-			if(rowsUpdated == 0) {
-				throw new SQLException ("Query failed to update any rows");
+			//Set each entry to inactive
+			while(rs.next()) {
+				int curEmpDirID = rs.getInt("empldir_id");
+				this.setEmployeeDirActiveStatus(curEmpDirID, false);
 			}
 			
-			System.out.println(ps);
-					
-			String sql2 = "DELETE FROM employee WHERE e_id = " + empid;
-			
-			ps = this.getConnection().prepareStatement(sql2);
-			ps.setInt(1, empid);
-			
-			int rowsUpdated2 = ps.executeUpdate();
-			
-			//Check to see if the query failed to updated the database
-			if(rowsUpdated2 == 0) {
-				throw new SQLException ("Query failed to update any rows");
-			}
-			
-			System.out.println(ps);
+			//Deactive the employee in the employee table 		
+			this.setEmployeeActiveStatus(empid, false);
 			
 			this.getConnection().commit();
 			this.getConnection().setAutoCommit(true);
@@ -580,7 +566,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	 * @see com.thedawson.util.dao.RosterDAO#updateEmployee(int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, int, int)
 	 */
 	public boolean updateEmployee(int empid, String firstN, String lastN,
-			String email, String userid, String pwd, int hotelid, int jobid) {
+			String email, String userid, String pwd) {
 		
 		//Ensure all String parameters are not null first, then proceed
 		if(firstN == null || lastN == null || email == null || userid == null || pwd == null) {

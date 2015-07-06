@@ -22,10 +22,9 @@ public abstract class RosterDAO extends BaseDAO {
 	public abstract ArrayList<JobTitleModel> getAllJobTitles();
 	public abstract JobTitleModel getJobTitleById(int jobid);
 	public abstract EmployeeModel addEmployee(String firstN, String lastN, String email, String userid, String pwd, int hotelid, int jobid);
-	public abstract boolean removeEmployee(int empid);
+	public abstract boolean deactivateEmployee(int empid);
 	public abstract boolean setEmployeeActiveStatus(int empid, boolean state);
-	public abstract boolean updateEmployee(int empid, String firstN, String lastN, String email, String userid, String pwd, int hotelid, 
-			int jobid);
+	public abstract boolean updateEmployee(int empid, String firstN, String lastN, String email, String userid, String pwd);
 	public abstract ArrayList<EmployeeModel> getAllEmployees();
 	public abstract EmployeeModel getEmployeeById(int empid);
 	public abstract EmployeeDirModel addEmployeeDir(int hotelid, int empid, int jobid);
