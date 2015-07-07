@@ -251,12 +251,28 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	/* Retrieve all the job titles in the jobtitle table in the database
 	 * @return the arraylist of all the job title rows in the database in model objects
 	 */
-	public ArrayList<JobTitleModel> getAllJobTitles() {
+	public ArrayList<JobTitleModel> getAllJobTitles(String activeStatus) {
+		//Check activeStatus is a valid value
+		if(activeStatus != "Y" && activeStatus != "N" && activeStatus != null) {
+			return null;
+		}
+		
 		ArrayList<JobTitleModel> jtmList = new ArrayList<JobTitleModel>();
 		
-		//Create SQL Query and execute it
+		//Create SQL Query depending on activeStatus and execute it
 		String sql = "SELECT * FROM jobtitle";
 		
+		if(activeStatus != null) {
+			switch (activeStatus) {
+			case "Y": 
+				sql = sql + " WHERE is_active = 'Y'";
+				break;
+			case "N":
+				sql = sql + " WHERE is_active = 'N'";
+				break;
+			}
+		}
+				
 		System.out.println(sql);
 		
 		try {
@@ -628,12 +644,27 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	/* (non-Javadoc)
 	 * @see com.thedawson.util.dao.RosterDAO#getAllEmployees()
 	 */
-	public ArrayList<EmployeeModel> getAllEmployees() {
+	public ArrayList<EmployeeModel> getAllEmployees(String activeStatus) {
+		//Check activeStatus is a valid value
+		if(activeStatus != "Y" && activeStatus != "N" && activeStatus != null) {
+			return null;
+		}
 		
 		ArrayList<EmployeeModel> emList = new ArrayList<EmployeeModel>();
 		
-		//Create SQL Query and execute it
+		//Create SQL Query depending on activeStatus and execute it
 		String sql = "SELECT * FROM employee";
+		
+		if(activeStatus != null) {
+			switch (activeStatus) {
+			case "Y": 
+				sql = sql + " WHERE is_active = 'Y'";
+				break;
+			case "N":
+				sql = sql + " WHERE is_active = 'N'";
+				break;
+			}
+		}
 
 		System.out.println(sql);
 
@@ -956,11 +987,27 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	/* (non-Javadoc)
 	 * @see com.thedawson.util.dao.RosterDAO#getAllEmployeeDirs()
 	 */
-	public ArrayList<EmployeeDirModel> getAllEmployeeDirs() {
+	public ArrayList<EmployeeDirModel> getAllEmployeeDirs(String activeStatus) {
+		//Check activeStatus is a valid value
+		if(activeStatus != "Y" && activeStatus != "N" && activeStatus != null) {
+			return null;
+		}
+		
 		ArrayList<EmployeeDirModel> edList = new ArrayList<EmployeeDirModel>();
 		
-		//Create SQL Query and execute it
+		//Create SQL Query depending on activeStatus and execute it
 		String sql = "SELECT * FROM employeedir";
+		
+		if(activeStatus != null) {
+			switch (activeStatus) {
+			case "Y": 
+				sql = sql + " WHERE is_active = 'Y'";
+				break;
+			case "N":
+				sql = sql + " WHERE is_active = 'N'";
+				break;
+			}
+		}
 		
 		System.out.println(sql);
 		
@@ -1297,11 +1344,27 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	/* (non-Javadoc)
 	 * @see com.thedawson.util.dao.RosterDAO#getAllHotels()
 	 */
-	public ArrayList<HotelModel> getAllHotels() {
+	public ArrayList<HotelModel> getAllHotels(String activeStatus) {
+		//Check activeStatus is a valid value
+		if(activeStatus != "Y" && activeStatus != "N" && activeStatus != null) {
+			return null;
+		}
+		
 		ArrayList<HotelModel> hList = new ArrayList<HotelModel>();
 		
-		//Create SQL Query and execute it
+		//Create SQL Query depending on activeStatus and execute it
 		String sql = "SELECT * FROM hotel";
+		
+		if(activeStatus != null) {
+			switch (activeStatus) {
+			case "Y": 
+				sql = sql + " WHERE is_active = 'Y'";
+				break;
+			case "N":
+				sql = sql + " WHERE is_active = 'N'";
+				break;
+			}
+		}
 		
 		System.out.println(sql);
 		

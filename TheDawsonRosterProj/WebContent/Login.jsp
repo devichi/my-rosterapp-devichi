@@ -9,7 +9,7 @@
 </head>
 <body>
 	<h1>Creating Database Connection</h1>
-	<form action="testemployeedaomethods" method="post">
+	<form action="testjobdaomethods" method="post">
 		<input type="submit"/>
 	</form>
 </body>

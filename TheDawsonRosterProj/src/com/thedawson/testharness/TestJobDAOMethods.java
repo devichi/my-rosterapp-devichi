@@ -31,9 +31,37 @@ public class TestJobDAOMethods extends HttpServlet {
 		
 		DAOFactory df = DAOFactory.getInstance();
 		
+		//Test all 3 variations of get all job titles Y/N/All
+		for(int k = 0; k < 3; k++) {
+			ArrayList<JobTitleModel> jtmListGAT = null; 
+					
+			switch(k) {
+			case 0: 
+				System.out.println("Only Active Job Titles");
+				jtmListGAT = df.getRosterDao().getAllJobTitles("Y");
+				break;
+			case 1:
+				System.out.println("Only Inactive Job Titles");
+				jtmListGAT = df.getRosterDao().getAllJobTitles("N");
+				break;
+			case 2:
+				System.out.println("All Job Titles");
+				jtmListGAT = df.getRosterDao().getAllJobTitles(null);
+				break;
+			}
+	
+			Iterator<JobTitleModel> iterGAT = jtmListGAT.iterator();
+			while (iterGAT.hasNext()) {
+				JobTitleModel curJtmGAT = (JobTitleModel) iterGAT.next();
+	
+				System.out.println("JT Id: " + curJtmGAT.getJobTitleId() + " JT title: " + curJtmGAT.getJobTitleName() + 
+									" isActive: " + curJtmGAT.getIsActive());
+			}
+		}
 		
-		JobTitleModel jtm = df.getRosterDao().getJobTitleById(5);
-		//JobTitleModel jtm = df.getRosterDao().getJobTitleById(8888);
+		JobTitleModel jtm = df.getRosterDao().getJobTitleById(8888);
+		jtm = df.getRosterDao().getJobTitleById(5);
+		
 		
 		if (jtm != null) {
 			System.out.println("Job Title ID: " + jtm.getJobTitleId());
@@ -43,8 +71,8 @@ public class TestJobDAOMethods extends HttpServlet {
 		
 		System.out.println("Calling the DAO object add Job Title method");
 		
+		jtm = df.getRosterDao().addJobTitle(null);
 		jtm = df.getRosterDao().addJobTitle("Spaceman");
-		//jtm = df.getRosterDao().addJobTitle(null);
 		
 		if(jtm != null) {
 			System.out.println("Finished creating job Title, Print returned JT Model object details");
@@ -55,7 +83,7 @@ public class TestJobDAOMethods extends HttpServlet {
 			System.out.println("Printing all Job Titles in the database");
 
 			for(int i=0; i < 3; i++) {
-				ArrayList<JobTitleModel> jtmList = df.getRosterDao().getAllJobTitles();
+				ArrayList<JobTitleModel> jtmList = df.getRosterDao().getAllJobTitles("Y");
 
 				Iterator<JobTitleModel> iter = jtmList.iterator();
 				while (iter.hasNext()) {
@@ -68,8 +96,8 @@ public class TestJobDAOMethods extends HttpServlet {
 				if (i == 0) {
 					System.out.println("Updating the job title just created");
 
-					boolean updateResult = df.getRosterDao().updateJobTitle(jtm.getJobTitleId(), "Superstar");
-					//boolean updateResult = df.getRosterDao().updateJobTitle(123456, "Superstar");
+					boolean updateResult = df.getRosterDao().updateJobTitle(123456, "Superstar");
+					updateResult = df.getRosterDao().updateJobTitle(jtm.getJobTitleId(), "Superstar");
 					
 					if(updateResult == true) {
 						jtm.setJobTitleName("Superstar");
@@ -81,8 +109,8 @@ public class TestJobDAOMethods extends HttpServlet {
 				else if(i == 1) {
 					System.out.println("Changing the active status of job title to No");
 					
-					boolean csResult = df.getRosterDao().setJobTitleActiveStatus(jtm.getJobTitleId(), false);
-					//boolean csResult = df.getRosterDao().setJobTitleActiveStatus(88888889, false);
+					boolean csResult = df.getRosterDao().setJobTitleActiveStatus(88888889, false);
+					csResult = df.getRosterDao().setJobTitleActiveStatus(jtm.getJobTitleId(), false);
 					
 					if(csResult == true) {
 						jtm.setIsActive(false);
@@ -95,8 +123,8 @@ public class TestJobDAOMethods extends HttpServlet {
 
 			System.out.println("Deleting the job title just created");
 
-			boolean deleteResult = df.getRosterDao().removeJobTitle(jtm.getJobTitleId());
-			//boolean deleteResult = df.getRosterDao().removeJobTitle(99999999);
+			boolean deleteResult = df.getRosterDao().removeJobTitle(99999999);
+			deleteResult = df.getRosterDao().removeJobTitle(jtm.getJobTitleId());
 			
 			System.out.println("Remove Job Title Successful: " + deleteResult);
 		}
