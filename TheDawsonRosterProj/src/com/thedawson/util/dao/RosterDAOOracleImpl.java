@@ -391,7 +391,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 					
 					System.out.println(ps);
 					
-					int rowsUpdated = ps.executeUpdate(sql, akgCols);
+					int rowsUpdated = ps.executeUpdate();
 					
 					//Check to see if the query failed to updated the database
 					if(rowsUpdated == 0) {
@@ -425,7 +425,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 
 					System.out.println(ps);
 
-					int rowsUpdated2 = ps.executeUpdate(sql, akgCols);
+					int rowsUpdated2 = ps.executeUpdate();
 					
 					//Check to see if the query failed to updated the database
 					if(rowsUpdated2 == 0) {
@@ -495,11 +495,30 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			//Set each entry to inactive
 			while(rs.next()) {
 				int curEmpDirID = rs.getInt("empldir_id");
-				this.setEmployeeDirActiveStatus(curEmpDirID, false);
+				String sql2 = "UPDATE employeedir SET is_active = (?) WHERE empldir_id = (?)";
+				ps = this.getConnection().prepareStatement(sql2);
+				ps.setString(1, "N");
+				ps.setInt(2, curEmpDirID);
+				
+				int rowsUpdated = ps.executeUpdate();
+				
+				if(rowsUpdated == 0) {
+					throw new SQLException ("Query failed to update any rows on Employee Dir");
+				}
 			}
 			
 			//Deactive the employee in the employee table 		
-			this.setEmployeeActiveStatus(empid, false);
+			String sql3 = "UPDATE employee SET is_active = (?) WHERE e_id = (?)";
+			ps = this.getConnection().prepareStatement(sql3);
+			ps.setString(1, "N");
+			ps.setInt(2, empid);
+
+			int rowsUpdated1 = ps.executeUpdate();
+
+			//Check to see if the query failed to updated the database 
+			if(rowsUpdated1 == 0) {
+				throw new SQLException ("Query failed to update any rows on Employee");
+			}
 			
 			this.getConnection().commit();
 			this.getConnection().setAutoCommit(true);

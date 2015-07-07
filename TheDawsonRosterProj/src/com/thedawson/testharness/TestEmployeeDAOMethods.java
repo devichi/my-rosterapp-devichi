@@ -31,20 +31,55 @@ public class TestEmployeeDAOMethods extends HttpServlet {
 		
 		DAOFactory df = DAOFactory.getInstance();
 		
+		//Test all 3 variations of get all employees Y/N/All
+		for(int k = 0; k < 3; k++) {
+			ArrayList<EmployeeModel> emListGAE = null; 
+					
+			switch(k) {
+			case 0: 
+				System.out.println("Only Active Employees");
+				emListGAE = df.getRosterDao().getAllEmployees("Y");
+				break;
+			case 1:
+				System.out.println("Only Inactive Employees");
+				emListGAE = df.getRosterDao().getAllEmployees("N");
+				break;
+			case 2:
+				System.out.println("All Employees");
+				emListGAE = df.getRosterDao().getAllEmployees(null);
+				break;
+			}
+	
+			Iterator<EmployeeModel> iterGAE = emListGAE.iterator();
+			while (iterGAE.hasNext()) {
+				EmployeeModel curEmGAE = (EmployeeModel) iterGAE.next();
+	
+				System.out.println("Eid: " + curEmGAE.getEmployeeId() + " FName: " + curEmGAE.getFirstName() + " LName: " + curEmGAE.getLastName() + " Email: " + curEmGAE.getEmail() 
+						+ " User: " + curEmGAE.getUserName() + " Pwd: " + curEmGAE.getEncrPassword() + " isActive: " + curEmGAE.getIsActive());
+			}
+		}
 		
-		EmployeeModel em = df.getRosterDao().getEmployeeById(3);
-		//EmployeeModel em = df.getRosterDao().getEmployeeById(7777);
+		EmployeeModel em = df.getRosterDao().getEmployeeById(7777);
+		System.out.println("Get Employee By Id Invalid Result: " + em);
+		
+		em = df.getRosterDao().getEmployeeById(4);
+		
 		
 		if (em != null) {
-			System.out.println("FName: " + em.getFirstName() + " LName: " + em.getLastName() + " Email: " + em.getEmail() 
+			System.out.println("Eid: " + em.getEmployeeId() + " FName: " + em.getFirstName() + " LName: " + em.getLastName() + " Email: " + em.getEmail() 
 					+ " User: " + em.getUserName() + " Pwd: " + em.getEncrPassword() + " isActive: " + em.getIsActive());
 		}
 		
 		System.out.println("Calling the DAO object add Employee method");
 		
+		em = df.getRosterDao().addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 9);
+		System.out.println("Add Employee with invalid job id: " + em);
+		
+		em = df.getRosterDao().addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 99, 4);
+		System.out.println("Add Employee with invalid hotel id: " + em);
+		
+		//Valid Employee Add
 		em = df.getRosterDao().addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 4);
-		//EmployeeModel em = df.getRosterDao().addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 1, 9);
-		//EmployeeModel em = df.getRosterDao().addEmployee("Danny", "Fodor", "danny.fodor@gmail.com", "dfod", "dfod123", 99, 4);
 		
 		if(em != null) {
 			System.out.println("Finished creating Employee, Print returned Emp Model object details");
@@ -53,7 +88,7 @@ public class TestEmployeeDAOMethods extends HttpServlet {
 			
 			System.out.println("Printing the entire employee dir to show newly created employee details");
 			
-			ArrayList<EmployeeDirModel> emDirList = df.getRosterDao().getAllEmployeeDirs();
+			ArrayList<EmployeeDirModel> emDirList = df.getRosterDao().getAllEmployeeDirs(null);
 
 			Iterator<EmployeeDirModel> iter_dir = emDirList.iterator();
 			while (iter_dir.hasNext()) {
@@ -66,7 +101,7 @@ public class TestEmployeeDAOMethods extends HttpServlet {
 			System.out.println("Printing all Employees in the database");
 
 			for(int i=0; i < 3; i++) {
-				ArrayList<EmployeeModel> emList = df.getRosterDao().getAllEmployees();
+				ArrayList<EmployeeModel> emList = df.getRosterDao().getAllEmployees(null);
 
 				Iterator<EmployeeModel> iter = emList.iterator();
 				while (iter.hasNext()) {
@@ -135,11 +170,13 @@ public class TestEmployeeDAOMethods extends HttpServlet {
 						}
 					}
 				}
-				else if(i == 1) {
+				else if(i == 10) {
 					System.out.println("Changing the active status of employee to No");
 					
-					boolean csResult = df.getRosterDao().setEmployeeActiveStatus(em.getEmployeeId(), false);
-					//boolean csResult = df.getRosterDao().setEmployeeActiveStatus(88888889, false);
+					boolean csResult = df.getRosterDao().setEmployeeActiveStatus(88888889, false);
+					System.out.println("Set Employee Active Status invalid employee id: " + csResult);
+					
+					csResult = df.getRosterDao().setEmployeeActiveStatus(em.getEmployeeId(), false);
 					
 					if(csResult == true) {
 						em.setIsActive(false);
@@ -151,9 +188,10 @@ public class TestEmployeeDAOMethods extends HttpServlet {
 
 			System.out.println("Setting the active status of employee created to No and its directory entries to No to sim Delete");
 
-			boolean deactResult = df.getRosterDao().deactivateEmployee(em.getEmployeeId());
-			deactResult = df.getRosterDao().deactivateEmployee(888888);
+			boolean deactResult = df.getRosterDao().deactivateEmployee(888888);
+			System.out.println("Deactivate employee bad Emp Id: " + deactResult);
 			
+			deactResult = df.getRosterDao().deactivateEmployee(em.getEmployeeId());
 			System.out.println("Deactivate employee Successful: " + deactResult);
 		}
 		else {
