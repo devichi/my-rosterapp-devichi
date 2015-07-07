@@ -95,7 +95,7 @@ public class TestEmployeeDAOMethods extends HttpServlet {
 				EmployeeDirModel curemdir = (EmployeeDirModel) iter_dir.next();
 
 				System.out.println("EdirId: " + curemdir.getEmployeeDirId() + " HotId: " + curemdir.getHotelId() 
-						 + " EmpId: " + curemdir.getEmployeeId() + " JobId: " + curemdir.getJobId() + " isActive: " + curemdir.isActive());
+						 + " EmpId: " + curemdir.getEmployeeId() + " JobId: " + curemdir.getJobId() + " isActive: " + curemdir.getIsActive());
 			}
 			
 			System.out.println("Printing all Employees in the database");
