@@ -33,10 +33,10 @@ public abstract class RosterDAO extends BaseDAO {
 	public abstract boolean updateEmployeeDir(int empdirid, int hotelid, int empid, int jobid);
 	public abstract ArrayList<EmployeeDirModel> getAllEmployeeDirs(String activeStatus);
 	public abstract EmployeeDirModel getEmployeeDirById(int empdirid);
-	public abstract HotelModel addHotel(String hname, String haddr, String hcity, String hcntry, String hphone, String hfax);
+	public abstract HotelModel addHotel(String hname, String haddr, String hcity, String hprov, String hcntry, String hphone, String hfax);
 	public abstract boolean removeHotel(int hotelid);
 	public abstract boolean setHotelActiveStatus(int hotelid, boolean state);
-	public abstract boolean updateHotel(int hotelid, String hname, String haddr, String hcity, String hcntry, String hphone, String hfax);
+	public abstract boolean updateHotel(int hotelid, String hname, String haddr, String hcity, String hprov, String hcntry, String hphone, String hfax);
 	public abstract ArrayList<HotelModel> getAllHotels(String activeStatus);
 	public abstract HotelModel getHotelById(int hotelid);
 	public abstract WorkScheduleModel addNextWorkSchedule(int hotelid, Date startD, Date endD);

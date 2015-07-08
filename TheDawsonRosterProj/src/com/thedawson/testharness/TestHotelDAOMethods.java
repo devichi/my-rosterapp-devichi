@@ -31,77 +31,94 @@ public class TestHotelDAOMethods extends HttpServlet {
 		
 		DAOFactory df = DAOFactory.getInstance();
 		
+		HotelModel hm = df.getRosterDao().getHotelById(8888);
+		System.out.println("Get Hotel invalid id: " + hm);
 		
-		JobTitleModel jtm = df.getRosterDao().getJobTitleById(5);
-		//JobTitleModel jtm = df.getRosterDao().getJobTitleById(8888);
+		hm = df.getRosterDao().getHotelById(5);
 		
-		if (jtm != null) {
-			System.out.println("Job Title ID: " + jtm.getJobTitleId());
-			System.out.println("Job Title Name: " + jtm.getJobTitleName());
-			System.out.println("Job Title Active: " + jtm.getIsActive());
+		if (hm != null) {
+			System.out.println("H ID: " + hm.getHotelId() + " H Name: " + hm.getHotelName() + " H Addr: " + hm.getHotelAddress() + 
+					" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Country: " + hm.getHotelCountry() +  
+					" H Tel: " + hm.getHotelTelephoneNum() + " H Fax: " + hm.getHotelFaxNum() + " H Active: " + hm.getIsActive());
 		}
 		
-		System.out.println("Calling the DAO object add Job Title method");
+		System.out.println("Calling the DAO object add Hotel method");
 		
-		jtm = df.getRosterDao().addJobTitle("Spaceman");
-		//jtm = df.getRosterDao().addJobTitle(null);
+		//Invalid Entry
+		hm = df.getRosterDao().addHotel(null, null, null, null, null, null, null);
+		System.out.println("Add Invalid Hotel: " + hm);
 		
-		if(jtm != null) {
-			System.out.println("Finished creating job Title, Print returned JT Model object details");
-			System.out.println("Job Title ID: " + jtm.getJobTitleId());
-			System.out.println("Job Title Name: " + jtm.getJobTitleName());
-			System.out.println("Job Title isActive: " + jtm.getIsActive());
+		//Valid Entry
+		hm = df.getRosterDao().addHotel("Mariot", "1234 Five St.", "Montreal", "Quebec", "Canada", "(555)222-3333", "");
+		
+		if(hm != null) {
+			System.out.println("Finished creating Hotel, Print returned H Model object details");
+			System.out.println("H ID: " + hm.getHotelId() + " H Name: " + hm.getHotelName() + " H Addr: " + hm.getHotelAddress() + 
+					" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Country: " + hm.getHotelCountry() +  
+					" H Tel: " + hm.getHotelTelephoneNum() + " H Fax: " + hm.getHotelFaxNum() + " H Active: " + hm.getIsActive());
 
-			System.out.println("Printing all Job Titles in the database");
+			System.out.println("Printing all Hotels in the database");
 
 			for(int i=0; i < 3; i++) {
-				ArrayList<JobTitleModel> jtmList = df.getRosterDao().getAllJobTitles();
+				ArrayList<HotelModel> hmList = df.getRosterDao().getAllHotels(null);
 
-				Iterator<JobTitleModel> iter = jtmList.iterator();
+				Iterator<HotelModel> iter = hmList.iterator();
 				while (iter.hasNext()) {
-					JobTitleModel curJtm = (JobTitleModel) iter.next();
+					HotelModel curhm = (HotelModel) iter.next();
 
-					System.out.println("JT Id: " + curJtm.getJobTitleId() + " JT title: " + curJtm.getJobTitleName() + 
-										" isActive: " + curJtm.getIsActive());
+					System.out.println("H ID: " + curhm.getHotelId() + " H Name: " + curhm.getHotelName() + " H Addr: " + curhm.getHotelAddress() + 
+							" H City: " + curhm.getHotelCity() + " H Prov: " + curhm.getHotelProv() + " H Country: " + curhm.getHotelCountry() +  
+							" H Tel: " + curhm.getHotelTelephoneNum() + " H Fax: " + curhm.getHotelFaxNum() + " H Active: " + curhm.getIsActive());
 				}
 
 				if (i == 0) {
-					System.out.println("Updating the job title just created");
+					System.out.println("Updating the Hotel just created");
 
-					boolean updateResult = df.getRosterDao().updateJobTitle(jtm.getJobTitleId(), "Superstar");
-					//boolean updateResult = df.getRosterDao().updateJobTitle(123456, "Superstar");
+					boolean updateResult = df.getRosterDao().updateHotel(123456, "Fountana", "2314 Paris Rd.", "Paris", "", "France", "(514)666-7777", "");
+					System.out.println("Update Hotel invalid id: " + updateResult);
+					
+					updateResult = df.getRosterDao().updateHotel(hm.getHotelId(), "Fountana", "2314 Paris Rd.", "Paris", "", "France", "(514)666-7777", "");
 					
 					if(updateResult == true) {
-						jtm.setJobTitleName("Superstar");
-						System.out.println("Job Title ID: " + jtm.getJobTitleId());
-						System.out.println("Job Title Name: " + jtm.getJobTitleName());
-						System.out.println("Job Title isActive: " + jtm.getIsActive());
+						hm.setHotelName("Fountana");
+						hm.setHotelAddress("2314 Paris Rd.");
+						hm.setHotelCity("Paris");
+						hm.setHotelProv("");
+						hm.setHotelCountry("France");
+						hm.setHotelTelephoneNum("(514)666-7777");
+						System.out.println("H ID: " + hm.getHotelId() + " H Name: " + hm.getHotelName() + " H Addr: " + hm.getHotelAddress() + 
+								" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Country: " + hm.getHotelCountry() +  
+								" H Tel: " + hm.getHotelTelephoneNum() + " H Fax: " + hm.getHotelFaxNum() + " H Active: " + hm.getIsActive());
 					}
 				}
 				else if(i == 1) {
-					System.out.println("Changing the active status of job title to No");
+					System.out.println("Changing the active status of Hotel to No");
 					
-					boolean csResult = df.getRosterDao().setJobTitleActiveStatus(jtm.getJobTitleId(), false);
-					//boolean csResult = df.getRosterDao().setJobTitleActiveStatus(88888889, false);
+					boolean csResult = df.getRosterDao().setHotelActiveStatus(88888889, false);
+					System.out.println("Hotel Active Status invalid id: " + csResult);
+					
+					csResult = df.getRosterDao().setHotelActiveStatus(hm.getHotelId(), false);
 					
 					if(csResult == true) {
-						jtm.setIsActive(false);
-						System.out.println("Job Title ID: " + jtm.getJobTitleId());
-						System.out.println("Job Title Name: " + jtm.getJobTitleName());
-						System.out.println("Job Title isActive: " + jtm.getIsActive());
+						hm.setIsActive(false);
+						System.out.println("H ID: " + hm.getHotelId() + " H Name: " + hm.getHotelName() + " H Addr: " + hm.getHotelAddress() + 
+								" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Country: " + hm.getHotelCountry() +  
+								" H Tel: " + hm.getHotelTelephoneNum() + " H Fax: " + hm.getHotelFaxNum() + " H Active: " + hm.getIsActive());
 					}
 				}
 			}
 
-			System.out.println("Deleting the job title just created");
+			System.out.println("Deleting the Hotel just created");
 
-			boolean deleteResult = df.getRosterDao().removeJobTitle(jtm.getJobTitleId());
-			//boolean deleteResult = df.getRosterDao().removeJobTitle(99999999);
+			boolean deleteResult = df.getRosterDao().removeHotel(99999999);
+			System.out.println("Delete Hotel invalid id: " + deleteResult);
 			
-			System.out.println("Remove Job Title Successful: " + deleteResult);
+			deleteResult = df.getRosterDao().removeHotel(hm.getHotelId());
+			
+			System.out.println("Remove Hotel Successful: " + deleteResult);
 		}
 		else {
-			System.out.println("SQL Error in addJobTitle, job title model is: " + jtm);
+			System.out.println("SQL Error in addHotel, Hotel model is: " + hm);
 		}
 	}
 	

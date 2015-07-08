@@ -538,7 +538,68 @@ public class RosterDAOOracleImpl extends RosterDAO {
 		return returnStatus;
 	}
 	
-	
+	/* Deletes an employee from the database
+	 * @see com.thedawson.util.dao.RosterDAO#removeEmployee(int)
+	 * @param the employee database id to remove
+	 * @return boolean determine if the update ran successfully or was rolled back and failed
+	 */
+	public boolean removeEmployee(int empid) {
+		
+		boolean returnStatus = true;
+		
+		//Create SQL Query and execute it
+		Savepoint sp = null;
+		
+		try {
+			this.getConnection().setAutoCommit(false);
+			sp = this.getConnection().setSavepoint("Savepoint");
+			
+			//Delete from Employee Directory first since there are constraints, cannot delete Employee first
+			String sql = "DELETE FROM employeedir WHERE emp_id = (?)";
+			
+			ps = this.getConnection().prepareStatement(sql);
+			ps.setInt(1, empid);
+			
+			int rowsUpdated = ps.executeUpdate();
+			
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			System.out.println(ps);
+					
+			String sql2 = "DELETE FROM employee WHERE e_id = " + empid;
+			
+			ps = this.getConnection().prepareStatement(sql2);
+			ps.setInt(1, empid);
+			
+			int rowsUpdated2 = ps.executeUpdate();
+			
+			//Check to see if the query failed to updated the database
+			if(rowsUpdated2 == 0) {
+				throw new SQLException ("Query failed to update any rows");
+			}
+			
+			System.out.println(ps);
+			
+			this.getConnection().commit();
+			this.getConnection().setAutoCommit(true);
+			
+			returnStatus = true;
+			
+		} catch (SQLException se) {
+			se.printStackTrace();
+			try { this.getConnection().rollback(sp); } catch (SQLException se2) { se2.printStackTrace(); }
+			returnStatus = false;
+		}
+		finally {
+			this.closeConnection(ps, rs);
+			ps = null;
+		}
+		
+		return returnStatus;
+	}
 	
 	/* Changes the Active status of the employee
 	 * @param state true for activate, false for make inactive
@@ -784,16 +845,56 @@ public class RosterDAOOracleImpl extends RosterDAO {
 		
 		EmployeeDirModel edm = null;
 		
-		//Create SQL Query and execute it
-		String sql = "INSERT INTO employeedir VALUES (null, (?), (?), (?), (?))";
-		String[] akgCols = {"empldir_id"};
-		
-		System.out.println(sql);
-
 		int edGk = -1;
 		Savepoint sp = null;
-
+		
 		try {
+			//Check if the hotelid, empid, and jobid are active
+			//At the same time check if the ids valid to a save code exec below
+			String checkSql_hid = "SELECT * FROM hotel WHERE h_id = " + hotelid;
+			String checkSql_eid = "SELECT * FROM employee WHERE e_id = " + empid;
+			String checkSql_jid = "SELECT * FROM jobtitle WHERE job_id = " + jobid;
+			
+			for (int i=0; i < 3; i++) {
+				
+				String curQuery = null;
+				switch (i) {
+				case 0:
+					curQuery = checkSql_hid;
+					break;
+				case 1:
+					curQuery = checkSql_eid;
+					break;
+				default:
+					curQuery = checkSql_jid;
+					break;
+				}
+				
+				System.out.println("Current query: " + curQuery);
+				
+				ps = this.getConnection().prepareStatement(curQuery);
+				rs = ps.executeQuery();
+				
+				//Get the first entry and ONLY entry in the resultset
+				rs.next();
+				
+				//Note that is_active is consistent column name in the database over all 3 tables
+				String isActiveInd = rs.getString("is_active");
+				
+				//Check if the is_active indicator is "Y" or "N" or null
+				//if no pr null then we know that you cannot add this employee to the directory, it's inactive or dne, error out
+				//Otherwise we can continue adding the directory entry
+				if(isActiveInd.equals("N") || (isActiveInd == null)) {
+					throw new SQLException("Error: Attempting to add Employee Directory Entry using Inactive or non-existing value");
+				}
+			}
+			
+			//Create SQL Query and execute it
+			String sql = "INSERT INTO employeedir VALUES (null, (?), (?), (?), (?))";
+			String[] akgCols = {"empldir_id"};
+			
+			System.out.println(sql);
+
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
 			ps = this.getConnection().prepareStatement(sql, akgCols);
@@ -958,15 +1059,54 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			int jobid) {
 
 		boolean returnStatus = false;
-
-		//Create SQL Query and execute it
-		String sql = "UPDATE employeedir SET hotel_id = (?), "
-				+ "emp_id = (?) "
-				+ "WHERE empldir_id = (?)";
-
 		Savepoint sp = null;
 		
 		try {
+			//Check if the hotelid, empid, and jobid are active
+			//At the same time check if the ids valid to a save code exec below
+			String checkSql_hid = "SELECT * FROM hotel WHERE h_id = " + hotelid;
+			String checkSql_eid = "SELECT * FROM employee WHERE e_id = " + empid;
+			String checkSql_jid = "SELECT * FROM jobtitle WHERE job_id = " + jobid;
+			
+			for (int i=0; i < 3; i++) {
+				
+				String curQuery = null;
+				switch (i) {
+				case 0:
+					curQuery = checkSql_hid;
+					break;
+				case 1:
+					curQuery = checkSql_eid;
+					break;
+				default:
+					curQuery = checkSql_jid;
+					break;
+				}
+				
+				System.out.println("Update: Current query: " + curQuery);
+				
+				ps = this.getConnection().prepareStatement(curQuery);
+				rs = ps.executeQuery();
+				
+				//Get the first entry and ONLY entry in the resultset
+				rs.next();
+				
+				//Note that is_active is consistent column name in the database over all 3 tables
+				String isActiveInd = rs.getString("is_active");
+				
+				//Check if the is_active indicator is "Y" or "N" or null
+				//if no or null then we know that you cannot add this employee to the directory, it's inactive or dne, error out
+				//Otherwise we can continue updating the directory entry
+				if(isActiveInd.equals("N") || (isActiveInd == null)) {
+					throw new SQLException("Error: Attempting to update Employee Directory Entry using Inactive or non-existing value");
+				}
+			}
+			
+			//Create SQL Query and execute it
+			String sql = "UPDATE employeedir SET hotel_id = (?), "
+					+ "emp_id = (?) "
+					+ "WHERE empldir_id = (?)";
+			
 			this.getConnection().setAutoCommit(false);
 			sp = this.getConnection().setSavepoint("Savepoint");
 			ps = this.getConnection().prepareStatement(sql);
@@ -1118,17 +1258,17 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	 * @see com.thedawson.util.dao.RosterDAO#addHotel(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	public HotelModel addHotel(String hname, String haddr, String hcity,
-			String hcntry, String hphone, String hfax) {
+			String hprov, String hcntry, String hphone, String hfax) {
 		
 		//Ensure none of the String parameters are null first, then proceed
-		if(hname == null || haddr == null || hcity == null || hcntry == null || hphone == null || hfax == null) {
+		if(hname == null || haddr == null || hcity == null || hprov == null || hcntry == null || hphone == null || hfax == null) {
 			return null;
 		}
 
 		HotelModel hm = null;
 
 		//Create SQL Query and execute it
-		String sql = "INSERT INTO hotel VALUES (null, (?), (?), (?), (?), (?), (?), (?))";
+		String sql = "INSERT INTO hotel VALUES (null, (?), (?), (?), (?), (?), (?), (?), (?))";
 		String[] akgCols = {"h_id"};
 
 		int hGk = -1;
@@ -1141,10 +1281,11 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			ps.setString(1, hname);
 			ps.setString(2, haddr);
 			ps.setString(3, hcity);
-			ps.setString(4, hcntry);
-			ps.setString(5, hphone);
-			ps.setString(6, hfax);
-			ps.setString(7, "Y");
+			ps.setString(4, hprov);
+			ps.setString(5, hcntry);
+			ps.setString(6, hphone);
+			ps.setString(7, hfax);
+			ps.setString(8, "Y");
 
 			System.out.println(ps);
 
@@ -1173,7 +1314,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			this.getConnection().setAutoCommit(true);
 
 			//Create Hotel Model object for return
-			hm = new HotelModel(hGk, hname, haddr, hcity, hcntry, hphone, hfax, true);
+			hm = new HotelModel(hGk, hname, haddr, hcity, hprov, hcntry, hphone, hfax, true);
 
 		} catch (SQLException se) {
 			se.printStackTrace();
@@ -1298,10 +1439,10 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	 * @see com.thedawson.util.dao.RosterDAO#updateHotel(int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	public boolean updateHotel(int hotelid, String hname, String haddr,
-			String hcity, String hcntry, String hphone, String hfax) {
+			String hcity, String hprov, String hcntry, String hphone, String hfax) {
 		
 		//Ensure the String parameters are not null first, then proceed
-		if(hname == null || haddr == null || hcity == null || hcntry == null || hphone == null || hfax == null) {
+		if(hname == null || haddr == null || hcity == null || hprov == null || hcntry == null || hphone == null || hfax == null) {
 			return false;
 		}
 
@@ -1311,6 +1452,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 		String sql = "UPDATE hotel SET h_name = (?), "
 				+ "h_addr = (?), "
 				+ "h_city = (?), "
+				+ "h_prov = (?), "
 				+ "h_country = (?), "
 				+ "h_tel = (?), "
 				+ "h_fax = (?) "
@@ -1326,10 +1468,11 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			ps.setString(1, hname);
 			ps.setString(2, haddr);
 			ps.setString(3, hcity);
-			ps.setString(4, hcntry);
-			ps.setString(5, hphone);
-			ps.setString(6, hfax);
-			ps.setInt(7, hotelid);
+			ps.setString(4, hprov);
+			ps.setString(5, hcntry);
+			ps.setString(6, hphone);
+			ps.setString(7, hfax);
+			ps.setInt(8, hotelid);
 
 			System.out.println(ps);
 
@@ -1397,6 +1540,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 				String hName = rs.getString("h_name");
 				String hAddr = rs.getString("h_addr");
 				String hCity = rs.getString("h_city");
+				String hProv = rs.getString("h_prov");
 				String hCntry = rs.getString("h_country");
 				String hTel = rs.getString("h_tel");
 				String hFax = rs.getString("h_fax");
@@ -1407,7 +1551,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 					isActiveBool = false;
 				}
 
-				hList.add(new HotelModel(hotelId, hName, hAddr, hCity, hCntry, hTel, hFax, isActiveBool));
+				hList.add(new HotelModel(hotelId, hName, hAddr, hCity, hProv, hCntry, hTel, hFax, isActiveBool));
 			}
 			
 		} catch (SQLException se) {
@@ -1450,6 +1594,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 				String hName = rs.getString("h_name");
 				String hAddr = rs.getString("h_addr");
 				String hCity = rs.getString("h_city");
+				String hProv = rs.getString("h_prov");
 				String hCntry = rs.getString("h_country");
 				String hTel = rs.getString("h_tel");
 				String hFax = rs.getString("h_fax");
@@ -1460,7 +1605,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 					isActiveBool = false;
 				}
 
-				hm = new HotelModel(hotelId, hName, hAddr, hCity, hCntry, hTel, hFax, isActiveBool);
+				hm = new HotelModel(hotelId, hName, hAddr, hCity, hProv, hCntry, hTel, hFax, isActiveBool);
 			}
 					
 		} catch (SQLException se) {

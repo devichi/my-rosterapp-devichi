@@ -31,77 +31,167 @@ public class TestEmployeeDirDAOMethods extends HttpServlet {
 		
 		DAOFactory df = DAOFactory.getInstance();
 		
-		
-		JobTitleModel jtm = df.getRosterDao().getJobTitleById(5);
-		//JobTitleModel jtm = df.getRosterDao().getJobTitleById(8888);
-		
-		if (jtm != null) {
-			System.out.println("Job Title ID: " + jtm.getJobTitleId());
-			System.out.println("Job Title Name: " + jtm.getJobTitleName());
-			System.out.println("Job Title Active: " + jtm.getIsActive());
+		//Test all 3 variations of get all employee directories Y/N/All
+		for(int k = 0; k < 3; k++) {
+			ArrayList<EmployeeDirModel> edListGAED = null; 
+					
+			switch(k) {
+			case 0: 
+				System.out.println("Only Active Employee Dirs");
+				edListGAED = df.getRosterDao().getAllEmployeeDirs("Y");
+				break;
+			case 1:
+				System.out.println("Only Inactive Employees");
+				edListGAED = df.getRosterDao().getAllEmployeeDirs("N");
+				break;
+			case 2:
+				System.out.println("All Employees");
+				edListGAED = df.getRosterDao().getAllEmployeeDirs(null);
+				break;
+			}
+	
+			Iterator<EmployeeDirModel> iterGAED = edListGAED.iterator();
+			while (iterGAED.hasNext()) {
+				EmployeeDirModel curEmGAE = (EmployeeDirModel) iterGAED.next();
+	
+				System.out.println("ED_ID: " + curEmGAE.getEmployeeDirId() + " ED_Hotel: " + curEmGAE.getHotelId() + " ED_EmpId: " + curEmGAE.getEmployeeId() +
+						" ED_JobID: " + curEmGAE.getJobId() + " ED_Active: " + curEmGAE.getIsActive());
+			}
 		}
 		
-		System.out.println("Calling the DAO object add Job Title method");
 		
-		jtm = df.getRosterDao().addJobTitle("Spaceman");
-		//jtm = df.getRosterDao().addJobTitle(null);
+		EmployeeDirModel edm = df.getRosterDao().getEmployeeDirById(8888);
+		System.out.println("Get Employee Dir invalid ED Id: " + edm);
 		
-		if(jtm != null) {
-			System.out.println("Finished creating job Title, Print returned JT Model object details");
-			System.out.println("Job Title ID: " + jtm.getJobTitleId());
-			System.out.println("Job Title Name: " + jtm.getJobTitleName());
-			System.out.println("Job Title isActive: " + jtm.getIsActive());
+		edm = df.getRosterDao().getEmployeeDirById(5);
+		
+		
+		if (edm != null) {
+			System.out.println("ED_ID: " + edm.getEmployeeDirId() + " ED_Hotel: " + edm.getHotelId() + " ED_EmpId: " + edm.getEmployeeId() +
+					" ED_JobID: " + edm.getJobId() + " ED_Active: " + edm.getIsActive());
+		}
+		
+		System.out.println("Calling the DAO object add Employee Dir method");
+		
+		//Error Check Add Employee - Add entry already in Empl Dir
+		edm = df.getRosterDao().addEmployeeDir(1, 2, 4);
+		System.out.println("Error Check Add Emp - Entry already in ED: " + edm);
+		
+		//Error Check Add Employee - Add Invalid Hotel ID
+		edm = df.getRosterDao().addEmployeeDir(4, 2, 4);
+		System.out.println("Error Check Add Emp - Invalid Hotel ID: " + edm);
+		
+		//Error Check Add Employee - Add Inactive Hotel ID
+		edm = df.getRosterDao().addEmployeeDir(2, 2, 4);
+		System.out.println("Error Check Add Emp - Invalid Hotel ID: " + edm);
+		
+		//Error Check Add Employee - Add Invalid Emp ID
+		edm = df.getRosterDao().addEmployeeDir(3, 10, 4);
+		System.out.println("Error Check Add Emp - Invalid Emp ID: " + edm);
+		
+		//Error Check Add Employee - Add Inactive Emp ID
+		edm = df.getRosterDao().addEmployeeDir(3, 5, 2);
+		System.out.println("Error Check Add Emp - Inactive Emp ID: " + edm);
+		
+		//Error Check Add Employee - Add Invalid Job ID
+		edm = df.getRosterDao().addEmployeeDir(3, 3, 999);
+		System.out.println("Error Check Add Emp - Invalid Job ID: " + edm);
+		
+		//Error Check Add Employee - Add Inactive Job ID
+		edm = df.getRosterDao().addEmployeeDir(3, 4, 5);
+		System.out.println("Error Check Add Emp - Inactive Job ID: " + edm);
+		
+		//Valid Scenario
+		edm = df.getRosterDao().addEmployeeDir(3, 2, 4);
+		
+		
+		if(edm != null) {
+			System.out.println("Finished creating Employee Dir, Print returned ED Model object details");
+			System.out.println("ED_ID: " + edm.getEmployeeDirId() + " ED_Hotel: " + edm.getHotelId() + " ED_EmpId: " + edm.getEmployeeId() +
+					" ED_JobID: " + edm.getJobId() + " ED_Active: " + edm.getIsActive());
 
-			System.out.println("Printing all Job Titles in the database");
+			System.out.println("Printing all Employee Dirs in the database");
 
 			for(int i=0; i < 3; i++) {
-				ArrayList<JobTitleModel> jtmList = df.getRosterDao().getAllJobTitles();
+				ArrayList<EmployeeDirModel> edmList = df.getRosterDao().getAllEmployeeDirs(null);
 
-				Iterator<JobTitleModel> iter = jtmList.iterator();
+				Iterator<EmployeeDirModel> iter = edmList.iterator();
 				while (iter.hasNext()) {
-					JobTitleModel curJtm = (JobTitleModel) iter.next();
+					EmployeeDirModel curedm = (EmployeeDirModel) iter.next();
 
-					System.out.println("JT Id: " + curJtm.getJobTitleId() + " JT title: " + curJtm.getJobTitleName() + 
-										" isActive: " + curJtm.getIsActive());
+					System.out.println("ED_ID: " + curedm.getEmployeeDirId() + " ED_Hotel: " + curedm.getHotelId() + " ED_EmpId: " + curedm.getEmployeeId() +
+							" ED_JobID: " + curedm.getJobId() + " ED_Active: " + curedm.getIsActive());
 				}
 
 				if (i == 0) {
-					System.out.println("Updating the job title just created");
+					System.out.println("Updating the Employee Dir just created");
+					boolean updateResult = false;
 
-					boolean updateResult = df.getRosterDao().updateJobTitle(jtm.getJobTitleId(), "Superstar");
-					//boolean updateResult = df.getRosterDao().updateJobTitle(123456, "Superstar");
+					//Error Check Update Employee - Update entry already in Empl Dir
+					updateResult = df.getRosterDao().updateEmployeeDir(edm.getEmployeeDirId(), 1, 4, 3);
+					System.out.println("Error Check Update Emp - Entry already in ED: " + updateResult);
+					
+					//Error Check Update Employee - Update Invalid Hotel ID
+					updateResult = df.getRosterDao().updateEmployeeDir(edm.getEmployeeDirId(), 2222, 4, 1);
+					System.out.println("Error Check Update Emp - Invalid Hotel ID: " + updateResult);
+					
+					//Error Check Update Employee - Update Inactive Hotel ID
+					updateResult = df.getRosterDao().updateEmployeeDir(edm.getEmployeeDirId(), 2, 2, 2);
+					System.out.println("Error Check Update Emp - Invalid Hotel ID: " + updateResult);
+					
+					//Error Check Update Employee - Update Invalid Emp ID
+					updateResult = df.getRosterDao().updateEmployeeDir(edm.getEmployeeDirId(), 1, 45, 3);
+					System.out.println("Error Check Update Emp - Invalid Emp ID: " + updateResult);
+					
+					//Error Check Update Employee - Update Inactive Emp ID
+					updateResult = df.getRosterDao().updateEmployeeDir(edm.getEmployeeDirId(), 1, 5, 2);
+					System.out.println("Error Check Update Emp - Inactive Emp ID: " + updateResult);
+					
+					//Error Check Update Employee - Update Invalid Job ID
+					updateResult = df.getRosterDao().updateEmployeeDir(edm.getEmployeeDirId(), 3, 4, 7);
+					System.out.println("Error Check Update Emp - Invalid Job ID: " + updateResult);
+					
+					//Error Check Update Employee - Update Inactive Job ID
+					updateResult = df.getRosterDao().updateEmployeeDir(edm.getEmployeeDirId(), 3, 4, 5);
+					System.out.println("Error Check Update Emp - Inactive Job ID: " + updateResult);
+					
+					//Valid Scenario - Changed the Hotel
+					//NOTE: If you change this scenario  change the below model set function and value as well
+					updateResult = df.getRosterDao().updateEmployeeDir(edm.getEmployeeDirId(), 1, 2, 4);
 					
 					if(updateResult == true) {
-						jtm.setJobTitleName("Superstar");
-						System.out.println("Job Title ID: " + jtm.getJobTitleId());
-						System.out.println("Job Title Name: " + jtm.getJobTitleName());
-						System.out.println("Job Title isActive: " + jtm.getIsActive());
+						edm.setHotelId(1);
+						System.out.println("ED_ID: " + edm.getEmployeeDirId() + " ED_Hotel: " + edm.getHotelId() + " ED_EmpId: " + edm.getEmployeeId() +
+								" ED_JobID: " + edm.getJobId() + " ED_Active: " + edm.getIsActive());
 					}
 				}
 				else if(i == 1) {
-					System.out.println("Changing the active status of job title to No");
+					System.out.println("Changing the active status of Employee Dir to No");
 					
-					boolean csResult = df.getRosterDao().setJobTitleActiveStatus(jtm.getJobTitleId(), false);
-					//boolean csResult = df.getRosterDao().setJobTitleActiveStatus(88888889, false);
+					boolean csResult = df.getRosterDao().setEmployeeDirActiveStatus(88888889, false);
+					System.out.println("Change Active Status invalid Employee Dir id: " + csResult);
 					
+					csResult = df.getRosterDao().setEmployeeDirActiveStatus(edm.getEmployeeDirId(), false);
+										
 					if(csResult == true) {
-						jtm.setIsActive(false);
-						System.out.println("Job Title ID: " + jtm.getJobTitleId());
-						System.out.println("Job Title Name: " + jtm.getJobTitleName());
-						System.out.println("Job Title isActive: " + jtm.getIsActive());
+						edm.setIsActive(false);
+						System.out.println("ED_ID: " + edm.getEmployeeDirId() + " ED_Hotel: " + edm.getHotelId() + " ED_EmpId: " + edm.getEmployeeId() +
+								" ED_JobID: " + edm.getJobId() + " ED_Active: " + edm.getIsActive());
 					}
 				}
 			}
 
-			System.out.println("Deleting the job title just created");
+			System.out.println("Deleting the Employee Dir just created");
 
-			boolean deleteResult = df.getRosterDao().removeJobTitle(jtm.getJobTitleId());
-			//boolean deleteResult = df.getRosterDao().removeJobTitle(99999999);
+			boolean deleteResult = df.getRosterDao().removeEmployeeDir(99999999);
+			System.out.println("Deleting Employee Dir with invalid Id: " + deleteResult);
 			
-			System.out.println("Remove Job Title Successful: " + deleteResult);
+			deleteResult = df.getRosterDao().removeEmployeeDir(edm.getEmployeeDirId());
+			
+			System.out.println("Remove Employee Dir Successful: " + deleteResult);
 		}
 		else {
-			System.out.println("SQL Error in addJobTitle, job title model is: " + jtm);
+			System.out.println("SQL Error in addEmployeeDir, Employee Dir model is: " + edm);
 		}
 	}
 	
