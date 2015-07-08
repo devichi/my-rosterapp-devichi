@@ -876,16 +876,20 @@ public class RosterDAOOracleImpl extends RosterDAO {
 				rs = ps.executeQuery();
 				
 				//Get the first entry and ONLY entry in the resultset
-				rs.next();
-				
-				//Note that is_active is consistent column name in the database over all 3 tables
-				String isActiveInd = rs.getString("is_active");
-				
-				//Check if the is_active indicator is "Y" or "N" or null
-				//if no pr null then we know that you cannot add this employee to the directory, it's inactive or dne, error out
-				//Otherwise we can continue adding the directory entry
-				if(isActiveInd.equals("N") || (isActiveInd == null)) {
-					throw new SQLException("Error: Attempting to add Employee Directory Entry using Inactive or non-existing value");
+				if(rs.next()) {
+					//Note that is_active is consistent column name in the database over all 3 tables
+					String isActiveInd = rs.getString("is_active");
+					
+					//Check if the is_active indicator is "Y" or "N"
+					//if no then we know that you cannot add this info to the directory, it's using an inactive id, error out
+					//Otherwise we can continue adding the directory entry
+					if(isActiveInd.equals("N")) {
+						throw new SQLException("Error: Attempting to add Employee Directory Entry using Inactive value");
+					}
+				}
+				else {
+					//No entries returned from query when expected or b/c id was invalid, return without adding emp dir entry
+					throw new SQLException("Error: No result returned from query for checking is_active, add emp dir aborted");
 				}
 			}
 			
@@ -1089,16 +1093,21 @@ public class RosterDAOOracleImpl extends RosterDAO {
 				rs = ps.executeQuery();
 				
 				//Get the first entry and ONLY entry in the resultset
-				rs.next();
-				
-				//Note that is_active is consistent column name in the database over all 3 tables
-				String isActiveInd = rs.getString("is_active");
-				
-				//Check if the is_active indicator is "Y" or "N" or null
-				//if no or null then we know that you cannot add this employee to the directory, it's inactive or dne, error out
-				//Otherwise we can continue updating the directory entry
-				if(isActiveInd.equals("N") || (isActiveInd == null)) {
-					throw new SQLException("Error: Attempting to update Employee Directory Entry using Inactive or non-existing value");
+				if(rs.next()) {
+					
+					//Note that is_active is consistent column name in the database over all 3 tables
+					String isActiveInd = rs.getString("is_active");
+					
+					//Check if the is_active indicator is "Y" or "N"
+					//if no then we know that you cannot add this info to the directory, it's using an inactive id, error out
+					//Otherwise we can continue adding the directory entry
+					if(isActiveInd.equals("N")) {
+						throw new SQLException("Error: Attempting to update Employee Directory Entry using Inactive value");
+					}
+				}
+				else {
+					//No entries returned from query when expected or b/c id was invalid, return without updating emp dir entry
+					throw new SQLException("Error: No result returned from query for checking is_active, update emp dir aborted");
 				}
 			}
 			

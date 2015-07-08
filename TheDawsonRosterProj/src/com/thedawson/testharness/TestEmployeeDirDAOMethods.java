@@ -41,11 +41,11 @@ public class TestEmployeeDirDAOMethods extends HttpServlet {
 				edListGAED = df.getRosterDao().getAllEmployeeDirs("Y");
 				break;
 			case 1:
-				System.out.println("Only Inactive Employees");
+				System.out.println("Only Inactive Employees Dirs");
 				edListGAED = df.getRosterDao().getAllEmployeeDirs("N");
 				break;
 			case 2:
-				System.out.println("All Employees");
+				System.out.println("All Employees Dirs");
 				edListGAED = df.getRosterDao().getAllEmployeeDirs(null);
 				break;
 			}

@@ -31,6 +31,36 @@ public class TestHotelDAOMethods extends HttpServlet {
 		
 		DAOFactory df = DAOFactory.getInstance();
 		
+		//Test all 3 variations of get all employee directories Y/N/All
+		for(int k = 0; k < 3; k++) {
+			ArrayList<HotelModel> hListGAH = null; 
+					
+			switch(k) {
+			case 0: 
+				System.out.println("Only Active Hotels");
+				hListGAH = df.getRosterDao().getAllHotels("Y");
+				break;
+			case 1:
+				System.out.println("Only Inactive Hotels");
+				hListGAH = df.getRosterDao().getAllHotels("N");
+				break;
+			case 2:
+				System.out.println("All Hotels");
+				hListGAH = df.getRosterDao().getAllHotels(null);
+				break;
+			}
+			
+			Iterator<HotelModel> iterGAH = hListGAH.iterator();
+			while (iterGAH.hasNext()) {
+				HotelModel curHGAH = (HotelModel) iterGAH.next();
+	
+				System.out.println("H ID: " + curHGAH.getHotelId() + " H Name: " + curHGAH.getHotelName() + " H Addr: " + curHGAH.getHotelAddress() + 
+						" H City: " + curHGAH.getHotelCity() + " H Prov: " + curHGAH.getHotelProv() + " H Country: " + curHGAH.getHotelCountry() +  
+						" H Tel: " + curHGAH.getHotelTelephoneNum() + " H Fax: " + curHGAH.getHotelFaxNum() + " H Active: " + curHGAH.getIsActive());
+			}
+		}
+		
+		
 		HotelModel hm = df.getRosterDao().getHotelById(8888);
 		System.out.println("Get Hotel invalid id: " + hm);
 		
