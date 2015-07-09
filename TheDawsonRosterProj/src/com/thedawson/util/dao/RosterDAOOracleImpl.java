@@ -1267,17 +1267,17 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	 * @see com.thedawson.util.dao.RosterDAO#addHotel(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	public HotelModel addHotel(String hname, String haddr, String hcity,
-			String hprov, String hcntry, String hphone, String hfax) {
+			String hprov, String hpcd, String hcntry, String hphone, String hfax) {
 		
-		//Ensure none of the String parameters are null first, then proceed
-		if(hname == null || haddr == null || hcity == null || hprov == null || hcntry == null || hphone == null || hfax == null) {
+		//Ensure none of the String parameters (except postal code and fax) are null first, then proceed
+		if(hname == null || haddr == null || hcity == null || hprov == null || hcntry == null || hphone == null) {
 			return null;
 		}
 
 		HotelModel hm = null;
 
 		//Create SQL Query and execute it
-		String sql = "INSERT INTO hotel VALUES (null, (?), (?), (?), (?), (?), (?), (?), (?))";
+		String sql = "INSERT INTO hotel VALUES (null, (?), (?), (?), (?), (?), (?), (?), (?), (?))";
 		String[] akgCols = {"h_id"};
 
 		int hGk = -1;
@@ -1291,10 +1291,11 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			ps.setString(2, haddr);
 			ps.setString(3, hcity);
 			ps.setString(4, hprov);
-			ps.setString(5, hcntry);
-			ps.setString(6, hphone);
-			ps.setString(7, hfax);
-			ps.setString(8, "Y");
+			ps.setString(5, hpcd);
+			ps.setString(6, hcntry);
+			ps.setString(7, hphone);
+			ps.setString(8, hfax);
+			ps.setString(9, "Y");
 
 			System.out.println(ps);
 
@@ -1323,7 +1324,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			this.getConnection().setAutoCommit(true);
 
 			//Create Hotel Model object for return
-			hm = new HotelModel(hGk, hname, haddr, hcity, hprov, hcntry, hphone, hfax, true);
+			hm = new HotelModel(hGk, hname, haddr, hcity, hprov, hpcd, hcntry, hphone, hfax, true);
 
 		} catch (SQLException se) {
 			se.printStackTrace();
@@ -1448,10 +1449,10 @@ public class RosterDAOOracleImpl extends RosterDAO {
 	 * @see com.thedawson.util.dao.RosterDAO#updateHotel(int, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	public boolean updateHotel(int hotelid, String hname, String haddr,
-			String hcity, String hprov, String hcntry, String hphone, String hfax) {
+			String hcity, String hprov, String hpcd, String hcntry, String hphone, String hfax) {
 		
-		//Ensure the String parameters are not null first, then proceed
-		if(hname == null || haddr == null || hcity == null || hprov == null || hcntry == null || hphone == null || hfax == null) {
+		//Ensure the String parameters (except postal code and fax) are not null first, then proceed
+		if(hname == null || haddr == null || hcity == null || hprov == null || hcntry == null || hphone == null) {
 			return false;
 		}
 
@@ -1462,6 +1463,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 				+ "h_addr = (?), "
 				+ "h_city = (?), "
 				+ "h_prov = (?), "
+				+ "h_postcd = (?), "
 				+ "h_country = (?), "
 				+ "h_tel = (?), "
 				+ "h_fax = (?) "
@@ -1478,10 +1480,11 @@ public class RosterDAOOracleImpl extends RosterDAO {
 			ps.setString(2, haddr);
 			ps.setString(3, hcity);
 			ps.setString(4, hprov);
-			ps.setString(5, hcntry);
-			ps.setString(6, hphone);
-			ps.setString(7, hfax);
-			ps.setInt(8, hotelid);
+			ps.setString(5, hpcd);
+			ps.setString(6, hcntry);
+			ps.setString(7, hphone);
+			ps.setString(8, hfax);
+			ps.setInt(9, hotelid);
 
 			System.out.println(ps);
 
@@ -1550,6 +1553,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 				String hAddr = rs.getString("h_addr");
 				String hCity = rs.getString("h_city");
 				String hProv = rs.getString("h_prov");
+				String hPcd = rs.getString("h_postcd");
 				String hCntry = rs.getString("h_country");
 				String hTel = rs.getString("h_tel");
 				String hFax = rs.getString("h_fax");
@@ -1560,7 +1564,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 					isActiveBool = false;
 				}
 
-				hList.add(new HotelModel(hotelId, hName, hAddr, hCity, hProv, hCntry, hTel, hFax, isActiveBool));
+				hList.add(new HotelModel(hotelId, hName, hAddr, hCity, hProv, hPcd, hCntry, hTel, hFax, isActiveBool));
 			}
 			
 		} catch (SQLException se) {
@@ -1604,6 +1608,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 				String hAddr = rs.getString("h_addr");
 				String hCity = rs.getString("h_city");
 				String hProv = rs.getString("h_prov");
+				String hPcd = rs.getString("h_postcd");
 				String hCntry = rs.getString("h_country");
 				String hTel = rs.getString("h_tel");
 				String hFax = rs.getString("h_fax");
@@ -1614,7 +1619,7 @@ public class RosterDAOOracleImpl extends RosterDAO {
 					isActiveBool = false;
 				}
 
-				hm = new HotelModel(hotelId, hName, hAddr, hCity, hProv, hCntry, hTel, hFax, isActiveBool);
+				hm = new HotelModel(hotelId, hName, hAddr, hCity, hProv, hPcd, hCntry, hTel, hFax, isActiveBool);
 			}
 					
 		} catch (SQLException se) {

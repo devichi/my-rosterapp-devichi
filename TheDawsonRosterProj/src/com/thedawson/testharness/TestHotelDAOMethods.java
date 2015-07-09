@@ -55,7 +55,7 @@ public class TestHotelDAOMethods extends HttpServlet {
 				HotelModel curHGAH = (HotelModel) iterGAH.next();
 	
 				System.out.println("H ID: " + curHGAH.getHotelId() + " H Name: " + curHGAH.getHotelName() + " H Addr: " + curHGAH.getHotelAddress() + 
-						" H City: " + curHGAH.getHotelCity() + " H Prov: " + curHGAH.getHotelProv() + " H Country: " + curHGAH.getHotelCountry() +  
+						" H City: " + curHGAH.getHotelCity() + " H Prov: " + curHGAH.getHotelProv()+ " H Pcd: " + curHGAH.getHotelPostCd() + " H Country: " + curHGAH.getHotelCountry() +  
 						" H Tel: " + curHGAH.getHotelTelephoneNum() + " H Fax: " + curHGAH.getHotelFaxNum() + " H Active: " + curHGAH.getIsActive());
 			}
 		}
@@ -64,27 +64,27 @@ public class TestHotelDAOMethods extends HttpServlet {
 		HotelModel hm = df.getRosterDao().getHotelById(8888);
 		System.out.println("Get Hotel invalid id: " + hm);
 		
-		hm = df.getRosterDao().getHotelById(5);
+		hm = df.getRosterDao().getHotelById(3);
 		
 		if (hm != null) {
 			System.out.println("H ID: " + hm.getHotelId() + " H Name: " + hm.getHotelName() + " H Addr: " + hm.getHotelAddress() + 
-					" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Country: " + hm.getHotelCountry() +  
+					" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Pcd: " + hm.getHotelPostCd() +" H Country: " + hm.getHotelCountry() +  
 					" H Tel: " + hm.getHotelTelephoneNum() + " H Fax: " + hm.getHotelFaxNum() + " H Active: " + hm.getIsActive());
 		}
 		
 		System.out.println("Calling the DAO object add Hotel method");
 		
 		//Invalid Entry
-		hm = df.getRosterDao().addHotel(null, null, null, null, null, null, null);
+		hm = df.getRosterDao().addHotel(null, null, null, null, null, null, null, null);
 		System.out.println("Add Invalid Hotel: " + hm);
 		
 		//Valid Entry
-		hm = df.getRosterDao().addHotel("Mariot", "1234 Five St.", "Montreal", "Quebec", "Canada", "(555)222-3333", "");
+		hm = df.getRosterDao().addHotel("Mariot", "1234 Five St.", "Montreal", "Quebec", "P2R 5Y8", "Canada", "(555)222-3333", null);
 		
 		if(hm != null) {
 			System.out.println("Finished creating Hotel, Print returned H Model object details");
 			System.out.println("H ID: " + hm.getHotelId() + " H Name: " + hm.getHotelName() + " H Addr: " + hm.getHotelAddress() + 
-					" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Country: " + hm.getHotelCountry() +  
+					" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Pcd: " + hm.getHotelPostCd() +" H Country: " + hm.getHotelCountry() +  
 					" H Tel: " + hm.getHotelTelephoneNum() + " H Fax: " + hm.getHotelFaxNum() + " H Active: " + hm.getIsActive());
 
 			System.out.println("Printing all Hotels in the database");
@@ -97,27 +97,28 @@ public class TestHotelDAOMethods extends HttpServlet {
 					HotelModel curhm = (HotelModel) iter.next();
 
 					System.out.println("H ID: " + curhm.getHotelId() + " H Name: " + curhm.getHotelName() + " H Addr: " + curhm.getHotelAddress() + 
-							" H City: " + curhm.getHotelCity() + " H Prov: " + curhm.getHotelProv() + " H Country: " + curhm.getHotelCountry() +  
+							" H City: " + curhm.getHotelCity() + " H Prov: " + curhm.getHotelProv() + " H Pcd: " + curhm.getHotelPostCd() + " H Country: " + curhm.getHotelCountry() +  
 							" H Tel: " + curhm.getHotelTelephoneNum() + " H Fax: " + curhm.getHotelFaxNum() + " H Active: " + curhm.getIsActive());
 				}
 
 				if (i == 0) {
 					System.out.println("Updating the Hotel just created");
 
-					boolean updateResult = df.getRosterDao().updateHotel(123456, "Fountana", "2314 Paris Rd.", "Paris", "", "France", "(514)666-7777", "");
+					boolean updateResult = df.getRosterDao().updateHotel(123456, "Fountana", "2314 Paris Rd.", "Paris", "", "75008", "France", "(514)666-7777", "");
 					System.out.println("Update Hotel invalid id: " + updateResult);
 					
-					updateResult = df.getRosterDao().updateHotel(hm.getHotelId(), "Fountana", "2314 Paris Rd.", "Paris", "", "France", "(514)666-7777", "");
+					updateResult = df.getRosterDao().updateHotel(hm.getHotelId(), "Fountana", "2314 Paris Rd.", "Paris", "", "75008", "France", "(514)666-7777", "");
 					
 					if(updateResult == true) {
 						hm.setHotelName("Fountana");
 						hm.setHotelAddress("2314 Paris Rd.");
 						hm.setHotelCity("Paris");
 						hm.setHotelProv("");
+						hm.setHotelPostCd("75008");
 						hm.setHotelCountry("France");
 						hm.setHotelTelephoneNum("(514)666-7777");
 						System.out.println("H ID: " + hm.getHotelId() + " H Name: " + hm.getHotelName() + " H Addr: " + hm.getHotelAddress() + 
-								" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Country: " + hm.getHotelCountry() +  
+								" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Pcd: " + hm.getHotelPostCd() +" H Country: " + hm.getHotelCountry() +  
 								" H Tel: " + hm.getHotelTelephoneNum() + " H Fax: " + hm.getHotelFaxNum() + " H Active: " + hm.getIsActive());
 					}
 				}
@@ -132,7 +133,7 @@ public class TestHotelDAOMethods extends HttpServlet {
 					if(csResult == true) {
 						hm.setIsActive(false);
 						System.out.println("H ID: " + hm.getHotelId() + " H Name: " + hm.getHotelName() + " H Addr: " + hm.getHotelAddress() + 
-								" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Country: " + hm.getHotelCountry() +  
+								" H City: " + hm.getHotelCity() + " H Prov: " + hm.getHotelProv() + " H Pcd: " + hm.getHotelPostCd() +" H Country: " + hm.getHotelCountry() +  
 								" H Tel: " + hm.getHotelTelephoneNum() + " H Fax: " + hm.getHotelFaxNum() + " H Active: " + hm.getIsActive());
 					}
 				}

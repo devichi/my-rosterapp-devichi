@@ -13,6 +13,7 @@ public class HotelModel {
 	private String hotelAddress;
 	private String hotelCity;
 	private String hotelProv;
+	private String hotelPostCd;
 	private String hotelCountry;
 	private String hotelTelephoneNum;
 	private String hotelFaxNum;
@@ -20,13 +21,14 @@ public class HotelModel {
 	
 	//Constructor
 	public HotelModel(int hotelId, String hotelName, String hotelAddress,
-			String hotelCity, String hotelProvince, String hotelCountry,
+			String hotelCity, String hotelProvince, String hotelPostalCode, String hotelCountry,
 			String hotelTelephoneNum, String hotelFaxNum, boolean isActive) {
 		this.hotelId = hotelId;
 		this.hotelName = hotelName;
 		this.hotelAddress = hotelAddress;
 		this.hotelCity = hotelCity;
 		this.hotelProv = hotelProvince;
+		this.hotelPostCd = hotelPostalCode;
 		this.hotelCountry = hotelCountry;
 		this.hotelTelephoneNum = hotelTelephoneNum;
 		this.hotelFaxNum = hotelFaxNum;
@@ -72,6 +74,14 @@ public class HotelModel {
 
 	public void setHotelProv(String hotelProv) {
 		this.hotelProv = hotelProv;
+	}
+
+	public String getHotelPostCd() {
+		return hotelPostCd;
+	}
+
+	public void setHotelPostCd(String hotelPostCd) {
+		this.hotelPostCd = hotelPostCd;
 	}
 
 	public String getHotelCountry() {
