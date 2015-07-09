@@ -104,16 +104,16 @@ public class TestHotelDAOMethods extends HttpServlet {
 				if (i == 0) {
 					System.out.println("Updating the Hotel just created");
 
-					boolean updateResult = df.getRosterDao().updateHotel(123456, "Fountana", "2314 Paris Rd.", "Paris", "", "75008", "France", "(514)666-7777", "");
+					boolean updateResult = df.getRosterDao().updateHotel(123456, "Fountana", "2314 Paris Rd.", "Paris", "Île-de-France", "75008", "France", "(514)666-7777", "");
 					System.out.println("Update Hotel invalid id: " + updateResult);
 					
-					updateResult = df.getRosterDao().updateHotel(hm.getHotelId(), "Fountana", "2314 Paris Rd.", "Paris", "", "75008", "France", "(514)666-7777", "");
+					updateResult = df.getRosterDao().updateHotel(hm.getHotelId(), "Fountana", "2314 Paris Rd.", "Paris", "Île-de-France", "75008", "France", "(514)666-7777", "");
 					
 					if(updateResult == true) {
 						hm.setHotelName("Fountana");
 						hm.setHotelAddress("2314 Paris Rd.");
 						hm.setHotelCity("Paris");
-						hm.setHotelProv("");
+						hm.setHotelProv("Île-de-France");
 						hm.setHotelPostCd("75008");
 						hm.setHotelCountry("France");
 						hm.setHotelTelephoneNum("(514)666-7777");
